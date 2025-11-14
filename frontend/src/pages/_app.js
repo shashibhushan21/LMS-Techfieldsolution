@@ -1,8 +1,9 @@
 import '@/styles/globals.css';
+import 'react-toastify/dist/ReactToastify.css';
+import 'nprogress/nprogress.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { SocketProvider } from '@/context/SocketContext';
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import NProgress from 'nprogress';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
