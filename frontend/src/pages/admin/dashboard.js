@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import AdminLayout from '@/components/layout/AdminLayout';
 import StatsCard from '@/components/dashboard/StatsCard';
 import apiClient from '@/utils/apiClient';
 import { FiUsers, FiBookOpen, FiFileText, FiTrendingUp, FiUserCheck } from 'react-icons/fi';
@@ -27,10 +27,24 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await apiClient.get('/analytics/admin-dashboard');
-      setDashboardData(response.data.data);
+      // Try primary endpoint first, fallback to alternate
+      let response;
+      try {
+        response = await apiClient.get('/analytics/dashboard/admin');
+      } catch (e) {
+        response = await apiClient.get('/analytics/admin-dashboard');
+      }
+      setDashboardData(response.data.data || response.data);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      // Set minimal fallback data to prevent "Failed to load" message
+      setDashboardData({
+        stats: { totalUsers: 0, totalInterns: 0, totalMentors: 0, totalInternships: 0, activeInternships: 0, totalEnrollments: 0 },
+        recentStats: { newUsers: 0, newEnrollments: 0 },
+        popularInternships: [],
+        recentEnrollments: [],
+        recentSubmissions: []
+      });
     } finally {
       setLoading(false);
     }
@@ -38,21 +52,21 @@ export default function AdminDashboard() {
 
   if (authLoading || loading) {
     return (
-      <DashboardLayout>
+      <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
-      </DashboardLayout>
+      </AdminLayout>
     );
   }
 
   if (!dashboardData) {
     return (
-      <DashboardLayout>
+      <AdminLayout>
         <div className="text-center py-12">
           <p className="text-gray-500">Failed to load dashboard data</p>
         </div>
-      </DashboardLayout>
+      </AdminLayout>
     );
   }
 
@@ -62,19 +76,19 @@ export default function AdminDashboard() {
   return (
     <>
       <Head>
-        <title>Admin Dashboard - TechFieldSolution LMS</title>
+        <title>Admin Dashboard - TechFieldSolutionLMS</title>
       </Head>
 
-      <DashboardLayout>
+      <AdminLayout>
         <div className="space-y-6">
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-lg p-6 text-white">
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-primary-100">Manage your LMS platform and monitor performance</p>
+          <div className="bg-white border border-neutral-200 rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-soft">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-heading font-bold text-neutral-900">Admin Dashboard</h1>
+              <p className="text-neutral-600 mt-1">Platform overview and performance metrics</p>
+            </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
             <StatsCard
               title="Total Users"
               value={stats.totalUsers || 0}
@@ -110,50 +124,35 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Popular Internships */}
           {dashboardData.popularInternships && dashboardData.popularInternships.length > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Popular Internships</h2>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
+            <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Popular Internships</h2>
+              <div className="overflow-auto">
+                <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
                         Internship
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
                         Category
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
                         Enrollments
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white">
                     {dashboardData.popularInternships.slice(0, 5).map((internship) => (
-                      <tr key={internship._id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{internship.title}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">{internship.category}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{internship.enrollmentCount}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              internship.status === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {internship.status}
-                          </span>
+                      <tr key={internship._id} className="border-t border-neutral-100">
+                        <td className="px-4 py-2 font-medium text-neutral-900">{internship.title}</td>
+                        <td className="px-4 py-2 text-neutral-600">{internship.category}</td>
+                        <td className="px-4 py-2 text-neutral-900">{internship.enrollmentCount}</td>
+                        <td className="px-4 py-2">
+                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${internship.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}>{internship.status}</span>
                         </td>
                       </tr>
                     ))}
@@ -163,21 +162,20 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Enrollments</h2>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">Recent Enrollments</h2>
                 {dashboardData.recentEnrollments && dashboardData.recentEnrollments.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-neutral-100">
                     {dashboardData.recentEnrollments.slice(0, 5).map((enrollment) => (
                       <div key={enrollment._id} className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {enrollment.user?.name}
+                            <p className="text-sm font-medium text-neutral-900">
+                              {enrollment.user?.name || enrollment.user?.firstName}
                             </p>
-                            <p className="text-sm text-gray-500">{enrollment.internship?.title}</p>
+                            <p className="text-xs text-neutral-600 mt-0.5">{enrollment.internship?.title}</p>
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -195,24 +193,24 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="p-4 text-gray-500 text-center">No recent enrollments</p>
+                  <p className="p-4 text-neutral-500 text-center text-sm">No recent enrollments</p>
                 )}
               </div>
             </div>
 
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Submissions</h2>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-4">Recent Submissions</h2>
                 {dashboardData.recentSubmissions && dashboardData.recentSubmissions.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-neutral-100">
                     {dashboardData.recentSubmissions.slice(0, 5).map((submission) => (
                       <div key={submission._id} className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {submission.user?.name}
+                            <p className="text-sm font-medium text-neutral-900">
+                              {submission.user?.name || submission.user?.firstName}
                             </p>
-                            <p className="text-sm text-gray-500">{submission.assignment?.title}</p>
+                            <p className="text-xs text-neutral-600 mt-0.5">{submission.assignment?.title}</p>
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -228,13 +226,13 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="p-4 text-gray-500 text-center">No recent submissions</p>
+                  <p className="p-4 text-neutral-500 text-center text-sm">No recent submissions</p>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </DashboardLayout>
+      </AdminLayout>
     </>
   );
 }

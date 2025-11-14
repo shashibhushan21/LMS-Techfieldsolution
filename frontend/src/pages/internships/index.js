@@ -5,6 +5,9 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import apiClient from '@/utils/apiClient';
 import { FiClock, FiUsers, FiCalendar, FiBookOpen } from 'react-icons/fi';
+import Button from '@/components/ui/Button';
+import SectionHeader from '@/components/ui/SectionHeader';
+import Card, { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 
 export default function Internships() {
   const [internships, setInternships] = useState([]);
@@ -56,12 +59,11 @@ export default function Internships() {
       <main className="min-h-screen bg-gray-50 py-12">
         <div className="container-custom">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Browse Internships</h1>
-            <p className="text-xl text-gray-600">
-              Discover hands-on learning opportunities across various domains
-            </p>
-          </div>
+          <SectionHeader
+            title="Browse Internships"
+            subtitle="Discover hands-on learning opportunities across various domains"
+            className="mb-8"
+          />
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
@@ -100,9 +102,7 @@ export default function Internships() {
                 <option value="Intermediate">Intermediate</option>
                 <option value="Advanced">Advanced</option>
               </select>
-              <button type="submit" className="btn btn-primary">
-                Search
-              </button>
+              <Button type="submit">Search</Button>
             </form>
           </div>
 
@@ -115,57 +115,57 @@ export default function Internships() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {internships.map((internship) => (
                 <Link key={internship._id} href={`/internships/${internship._id}`}>
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full">
-                    {internship.thumbnailUrl && (
-                      <img
-                        src={internship.thumbnailUrl}
-                        alt={internship.title}
-                        className="w-full h-48 object-cover"
-                      />
-                    )}
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-3 py-1 bg-primary-50 text-primary-600 text-xs font-medium rounded-full">
-                          {internship.category}
-                        </span>
-                        <span className="text-xs text-gray-500">{internship.level}</span>
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        {internship.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        {internship.description}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center">
-                          <FiClock className="w-4 h-4 mr-2" />
-                          <span>{internship.duration} weeks</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FiBookOpen className="w-4 h-4 mr-2" />
-                          <span>{internship.moduleCount || 0} modules</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FiUsers className="w-4 h-4 mr-2" />
-                          <span>{internship.enrollmentCount || 0} enrolled</span>
-                        </div>
-                        <div className="flex items-center">
-                          <FiCalendar className="w-4 h-4 mr-2" />
-                          <span>
-                            {internship.startDate
-                              ? new Date(internship.startDate).toLocaleDateString()
-                              : 'Flexible'}
-                          </span>
-                        </div>
-                      </div>
-                      {internship.mentor && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-sm text-gray-600">
-                            Mentor: <span className="font-medium">{internship.mentor.name}</span>
-                          </p>
-                        </div>
+                  <div className="cursor-pointer h-full group">
+                    <Card className="overflow-hidden h-full transition-shadow group-hover:shadow-md">
+                      {internship.thumbnailUrl && (
+                        <img
+                          src={internship.thumbnailUrl}
+                          alt={internship.title}
+                          className="w-full h-48 object-cover"
+                        />
                       )}
-                    </div>
+                      <CardHeader>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="px-3 py-1 bg-primary-50 text-primary-600 text-xs font-medium rounded-full">
+                            {internship.category}
+                          </span>
+                          <span className="text-xs text-gray-500">{internship.level}</span>
+                        </div>
+                        <CardTitle>{internship.title}</CardTitle>
+                        <CardDescription>{internship.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center">
+                            <FiClock className="w-4 h-4 mr-2" />
+                            <span>{internship.duration} weeks</span>
+                          </div>
+                          <div className="flex items-center">
+                            <FiBookOpen className="w-4 h-4 mr-2" />
+                            <span>{internship.moduleCount || 0} modules</span>
+                          </div>
+                          <div className="flex items-center">
+                            <FiUsers className="w-4 h-4 mr-2" />
+                            <span>{internship.enrollmentCount || 0} enrolled</span>
+                          </div>
+                          <div className="flex items-center">
+                            <FiCalendar className="w-4 h-4 mr-2" />
+                            <span>
+                              {internship.startDate
+                                ? new Date(internship.startDate).toLocaleDateString()
+                                : 'Flexible'}
+                            </span>
+                          </div>
+                        </div>
+                        {internship.mentor && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600">
+                              Mentor: <span className="font-medium">{internship.mentor.name}</span>
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 </Link>
               ))}

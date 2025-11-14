@@ -8,13 +8,17 @@ const xss = require('xss-clean');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
+const ensureAdmin = require('./config/ensureAdmin');
 const errorHandler = require('./middleware/errorHandler');
 
 // Load environment variables
 dotenv.config();
 
 // Connect to database
-connectDB();
+connectDB().then(() => {
+  // Ensure admin user exists based on env
+  ensureAdmin();
+});
 
 const app = express();
 

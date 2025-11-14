@@ -15,6 +15,9 @@ import {
   FiAward,
   FiCheckCircle,
 } from 'react-icons/fi';
+import { BRAND } from '@/config/brand';
+import Button from '@/components/ui/Button';
+import Card, { CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export default function InternshipDetail() {
   const router = useRouter();
@@ -110,7 +113,7 @@ export default function InternshipDetail() {
   return (
     <>
       <Head>
-        <title>{internship.title} - TechFieldSolution LMS</title>
+        <title>{`${internship.title} - ${BRAND.name}`}</title>
         <meta name="description" content={internship.description} />
       </Head>
 
@@ -161,65 +164,76 @@ export default function InternshipDetail() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
               {/* About */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Internship</h2>
-                <div className="prose max-w-none">
-                  <p className="text-gray-700 whitespace-pre-line">{internship.fullDescription || internship.description}</p>
-                </div>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>About This Internship</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none">
+                    <p className="text-gray-700 whitespace-pre-line">{internship.fullDescription || internship.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Learning Outcomes */}
               {internship.learningOutcomes && internship.learningOutcomes.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                    What You'll Learn
-                  </h2>
-                  <ul className="space-y-3">
-                    {internship.learningOutcomes.map((outcome, index) => (
-                      <li key={index} className="flex items-start">
-                        <FiCheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{outcome}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>What You'll Learn</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {internship.learningOutcomes.map((outcome, index) => (
+                        <li key={index} className="flex items-start">
+                          <FiCheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-700">{outcome}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Curriculum */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Curriculum</h2>
-                {modules.length > 0 ? (
-                  <div className="space-y-4">
-                    {modules.map((module, index) => (
-                      <div
-                        key={module._id}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 mb-1">
-                              Module {index + 1}: {module.title}
-                            </h3>
-                            <p className="text-sm text-gray-600">{module.description}</p>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Curriculum</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {modules.length > 0 ? (
+                    <div className="space-y-4">
+                      {modules.map((module, index) => (
+                        <div
+                          key={module._id}
+                          className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 mb-1">
+                                Module {index + 1}: {module.title}
+                              </h3>
+                              <p className="text-sm text-gray-600">{module.description}</p>
+                            </div>
+                            {module.duration && (
+                              <span className="text-sm text-gray-500 ml-4">
+                                {module.duration} hours
+                              </span>
+                            )}
                           </div>
-                          {module.duration && (
-                            <span className="text-sm text-gray-500 ml-4">
-                              {module.duration} hours
-                            </span>
-                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No modules available yet</p>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No modules available yet</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 sticky top-6">
+              <Card className="sticky top-6">
+                <CardContent className="p-6">
                 {/* Enrollment Status */}
                 {enrollment ? (
                   <div className="mb-6">
@@ -238,9 +252,7 @@ export default function InternshipDetail() {
                       </span>
                     </div>
                     {enrollment.status === 'approved' || enrollment.status === 'active' ? (
-                      <Link href="/dashboard" className="btn btn-primary w-full">
-                        Go to Dashboard
-                      </Link>
+                      <Button href="/dashboard" className="w-full">Go to Dashboard</Button>
                     ) : (
                       <p className="text-sm text-gray-600">
                         Your enrollment is pending approval. You'll be notified once approved.
@@ -248,13 +260,9 @@ export default function InternshipDetail() {
                     )}
                   </div>
                 ) : (
-                  <button
-                    onClick={handleEnroll}
-                    disabled={enrolling}
-                    className="btn btn-primary w-full mb-6"
-                  >
+                  <Button onClick={handleEnroll} disabled={enrolling} className="w-full mb-6">
                     {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                  </button>
+                  </Button>
                 )}
 
                 {/* Mentor Info */}
@@ -285,7 +293,8 @@ export default function InternshipDetail() {
                     Earn a verified certificate upon successful completion
                   </p>
                 </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

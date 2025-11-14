@@ -4,6 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { FiBookOpen, FiUsers, FiAward, FiTrendingUp } from 'react-icons/fi';
+import { BRAND } from '@/config/brand';
+import Button from '@/components/ui/Button';
+import SectionHeader from '@/components/ui/SectionHeader';
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
@@ -11,8 +14,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>TechFieldSolution LMS - Learning Management System</title>
-        <meta name="description" content="Join TechFieldSolution's internship programs and accelerate your career" />
+        <title>{`${BRAND.name} - Learning Management System`}</title>
+        <meta name="description" content={`Join ${BRAND.name}'s internship programs and accelerate your career`} />
       </Head>
 
       <Navbar />
@@ -29,13 +32,13 @@ export default function Home() {
                 Gain hands-on experience, build your portfolio, and earn industry-recognized certificates
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/internships" className="btn btn-primary bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 text-lg">
+                <Button href={BRAND.urls.internships} variant="secondary" size="lg" className="bg-white text-primary-600 hover:bg-neutral-100">
                   Browse Internships
-                </Link>
+                </Button>
                 {!isAuthenticated && (
-                  <Link href="/register" className="btn btn-outline border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 text-lg">
+                  <Button href={BRAND.urls.register} variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
                     Get Started Free
-                  </Link>
+                  </Button>
                 )}
               </div>
             </div>
@@ -45,9 +48,7 @@ export default function Home() {
         {/* Features Section */}
         <section className="py-20 bg-white">
           <div className="container-custom">
-            <h2 className="text-4xl font-heading font-bold text-center mb-12">
-              Why Choose Our Platform?
-            </h2>
+            <SectionHeader align="center" title="Why Choose Our Platform?" subtitle="Learn with structure, mentorship, and real outcomes." className="mb-12" />
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-full mb-4">
@@ -92,15 +93,8 @@ export default function Home() {
         {/* CTA Section */}
         <section className="py-20 bg-gray-50">
           <div className="container-custom text-center">
-            <h2 className="text-4xl font-heading font-bold mb-6">
-              Ready to Start Your Journey?
-            </h2>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join thousands of learners who have transformed their careers through our internship programs
-            </p>
-            <Link href="/internships" className="btn btn-primary px-8 py-3 text-lg">
-              Explore Internships
-            </Link>
+            <SectionHeader align="center" title="Ready to Start Your Journey?" subtitle="Join thousands who leveled up with hands-on internships." className="mb-8" />
+            <Button href={BRAND.urls.internships} size="lg">Explore Internships</Button>
           </div>
         </section>
       </main>
