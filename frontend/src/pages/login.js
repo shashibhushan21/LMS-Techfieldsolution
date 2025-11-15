@@ -22,19 +22,18 @@ export default function Login() {
 
     if (result.success) {
       toast.success('Login successful!');
-      // Redirect based on role
+      // Use window.location for full page reload to ensure auth state is properly loaded
       if (result.user.role === 'admin') {
-        router.push('/admin/dashboard');
+        window.location.href = '/admin/dashboard';
       } else if (result.user.role === 'mentor') {
-        router.push('/mentor/dashboard');
+        window.location.href = '/mentor/dashboard';
       } else {
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }
     } else {
       toast.error(result.message);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

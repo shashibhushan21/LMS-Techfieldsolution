@@ -200,6 +200,27 @@ exports.getUserEnrollments = async (req, res, next) => {
 };
 
 /**
+ * @desc    Get my enrollments
+ * @route   GET /api/enrollments/my-enrollments
+ * @access  Private/Intern
+ */
+exports.getMyEnrollments = async (req, res, next) => {
+  try {
+    const enrollments = await Enrollment.find({ user: req.user.id })
+      .populate('internship', 'title domain company duration description thumbnail')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: enrollments.length,
+      data: enrollments
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Get enrollment progress
  * @route   GET /api/enrollments/:id/progress
  * @access  Private

@@ -4,6 +4,7 @@ const {
   enroll,
   getEnrollments,
   getUserEnrollments,
+  getMyEnrollments,
   updateEnrollmentStatus,
   getEnrollmentProgress,
   dropEnrollment
@@ -12,6 +13,7 @@ const { protect, authorize } = require('../middleware/auth');
 
 router.post('/', protect, enroll);
 router.get('/', protect, authorize('admin', 'mentor'), getEnrollments);
+router.get('/my-enrollments', protect, authorize('intern'), getMyEnrollments);
 router.get('/user/:userId', protect, getUserEnrollments);
 router.get('/:id/progress', protect, getEnrollmentProgress);
 router.put('/:id/status', protect, authorize('admin', 'mentor'), updateEnrollmentStatus);
