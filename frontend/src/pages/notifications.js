@@ -58,7 +58,7 @@ export default function NotificationsPage() {
   return (
     <>
       <Head>
-        <title>{`Notifications - ${BRAND.name}`}</title>
+        <title>Notifications - {BRAND.name}</title>
       </Head>
       <Navbar />
       <main className="bg-gray-50">

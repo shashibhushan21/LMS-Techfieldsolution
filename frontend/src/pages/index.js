@@ -1,105 +1,88 @@
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import { FiBookOpen, FiUsers, FiAward, FiTrendingUp } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { BRAND } from '@/config/brand';
-import Button from '@/components/ui/Button';
-import SectionHeader from '@/components/ui/SectionHeader';
+import DecorativePanel from '@/components/home/DecorativePanel';
+import LoginForm from '@/components/home/LoginForm';
+import MobileHeader from '@/components/home/MobileHeader';
+import MobileBackground from '@/components/home/MobileBackground';
+import FooterLinks from '@/components/home/FooterLinks';
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const { login, isAuthenticated, user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (user.role === 'mentor') {
+        router.push('/mentor/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [isAuthenticated, user, router]);
+
+  const handleLoginSubmit = async (email, password) => {
+    setLoading(true);
+    setErrors({});
+
+    const result = await login(email, password);
+
+    if (result.success) {
+      toast.success('Login successful!');
+    } else {
+      setErrors({ submit: result.message || 'Login failed' });
+      toast.error(result.message || 'Login failed');
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       <Head>
-        <title>{`${BRAND.name} - Learning Management System`}</title>
-        <meta name="description" content={`Join ${BRAND.name}'s internship programs and accelerate your career`} />
+        <title>{`Sign In - ${BRAND.name}`}</title>
+        <meta name="description" content="Sign in to access your learning dashboard" />
       </Head>
 
-      <Navbar />
+      <div className="min-h-screen flex">
+        {/* Decorative Left Panel - Desktop Only */}
+        <DecorativePanel brandName={BRAND.name} />
 
-      <main>
-        {/* Hero Section */}
-        <section className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
-          <div className="container-custom">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-5xl md:text-6xl font-heading font-bold mb-6">
-                Transform Your Career with Expert-Led Internships
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 text-primary-100">
-                Gain hands-on experience, build your portfolio, and earn industry-recognized certificates
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button href={BRAND.urls.internships} variant="secondary" size="lg" className="bg-white text-primary-600 hover:bg-neutral-100">
-                  Browse Internships
-                </Button>
-                {!isAuthenticated && (
-                  <Button href={BRAND.urls.register} variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
-                    Get Started Free
-                  </Button>
-                )}
-              </div>
-            </div>
+        {/* Right Panel - Login Form */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100 relative">
+          {/* Mobile Background */}
+          <MobileBackground />
+
+          <div className="w-full max-w-md relative z-10 animate-scale-in">
+            {/* Mobile Header */}
+            <MobileHeader brandName={BRAND.name} />
+
+            {/* Login Form */}
+            <LoginForm 
+              onSubmit={handleLoginSubmit}
+              loading={loading}
+              errors={errors}
+            />
+
+            {/* Footer Links */}
+            <FooterLinks />
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* Features Section */}
-        <section className="py-20 bg-white">
-          <div className="container-custom">
-            <SectionHeader align="center" title="Why Choose Our Platform?" subtitle="Learn with structure, mentorship, and real outcomes." className="mb-12" />
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-full mb-4">
-                  <FiBookOpen className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Structured Learning</h3>
-                <p className="text-gray-600">
-                  Access curated content, video lessons, and hands-on projects
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-full mb-4">
-                  <FiUsers className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Expert Mentorship</h3>
-                <p className="text-gray-600">
-                  Learn from industry professionals with real-world experience
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-full mb-4">
-                  <FiAward className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Earn Certificates</h3>
-                <p className="text-gray-600">
-                  Get verified certificates to showcase your achievements
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 text-primary-600 rounded-full mb-4">
-                  <FiTrendingUp className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Track Progress</h3>
-                <p className="text-gray-600">
-                  Monitor your learning journey with detailed analytics
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="container-custom text-center">
-            <SectionHeader align="center" title="Ready to Start Your Journey?" subtitle="Join thousands who leveled up with hands-on internships." className="mb-8" />
-            <Button href={BRAND.urls.internships} size="lg">Explore Internships</Button>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
+      <style jsx>{`
+        @keyframes scale-in {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-scale-in { animation: scale-in 0.4s ease-out forwards; }
+      `}</style>
     </>
   );
 }

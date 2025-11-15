@@ -9,7 +9,7 @@ export default function About() {
   return (
     <>
       <Head>
-        <title>{`About - ${BRAND.name}`}</title>
+        <title>About - {BRAND.name}</title>
         <meta name="description" content={`${BRAND.name} — ${BRAND.tagline}`} />
       </Head>
       <Navbar />

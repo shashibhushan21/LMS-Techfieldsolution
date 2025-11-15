@@ -6,7 +6,7 @@ export const BRAND = {
     home: "/",
     internships: "/internships",
     dashboard: "/dashboard",
-    login: "/login",
+    login: "/",
     register: "/register",
   },
   social: {

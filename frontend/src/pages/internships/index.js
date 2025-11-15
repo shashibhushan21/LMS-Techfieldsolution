@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import apiClient from '@/utils/apiClient';
-import { FiClock, FiUsers, FiCalendar, FiBookOpen } from 'react-icons/fi';
+import { useAuth } from '@/context/AuthContext';
+import { FiClock, FiUsers, FiCalendar, FiBookOpen, FiAlertCircle } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Card, { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -17,10 +19,17 @@ export default function Internships() {
     level: '',
     search: '',
   });
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    fetchInternships();
-  }, []);
+    // Check if user is intern and redirect them
+    if (isAuthenticated && user && user.role === 'intern') {
+      router.push('/dashboard');
+    } else {
+      fetchInternships();
+    }
+  }, [isAuthenticated, user, router]);
 
   const fetchInternships = async () => {
     try {

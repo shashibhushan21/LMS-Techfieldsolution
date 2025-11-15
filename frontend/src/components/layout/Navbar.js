@@ -10,6 +10,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = () => logout();
 
@@ -64,19 +65,23 @@ export default function Navbar() {
                       3
                     </span>
                   </Link>
-                  <div className="relative group">
-                    <button className="flex items-center gap-2 text-neutral-700 hover:text-primary-700" aria-haspopup="menu" aria-expanded="false">
+                  <div className="relative" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
+                    <button className="flex items-center gap-2 text-neutral-700 hover:text-primary-700 py-2" aria-haspopup="menu" aria-expanded={dropdownOpen}>
                       <Avatar src={user?.avatar} name={`${user?.firstName} ${user?.lastName}`} size="sm" />
                       <span className="font-medium hidden lg:inline">{user?.firstName}</span>
                     </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 border border-neutral-200 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
-                      <Link href="/profile" className="block px-4 py-2 text-neutral-700 hover:bg-neutral-100">
-                        <FiUser className="inline mr-2" /> Profile
-                      </Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-neutral-700 hover:bg-neutral-100">
-                        <FiLogOut className="inline mr-2" /> Logout
-                      </button>
-                    </div>
+                    {dropdownOpen && (
+                      <div className="absolute right-0 top-full pt-2 w-48">
+                        <div className="bg-white rounded-lg shadow-lg py-2 border border-neutral-200 animate-fade-in">
+                          <Link href="/profile" className="block px-4 py-2 text-neutral-700 hover:bg-neutral-100 transition-colors">
+                            <FiUser className="inline mr-2" /> Profile
+                          </Link>
+                          <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-neutral-700 hover:bg-neutral-100 transition-colors">
+                            <FiLogOut className="inline mr-2" /> Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

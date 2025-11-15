@@ -30,10 +30,16 @@ export default function InternshipDetail() {
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
+    // Check if user is intern and redirect them
+    if (isAuthenticated && user && user.role === 'intern') {
+      router.push('/dashboard');
+      return;
+    }
+
     if (id) {
       fetchInternshipDetails();
     }
-  }, [id]);
+  }, [id, isAuthenticated, user, router]);
 
   const fetchInternshipDetails = async () => {
     try {
@@ -67,7 +73,7 @@ export default function InternshipDetail() {
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push('/');
       return;
     }
 
@@ -113,7 +119,7 @@ export default function InternshipDetail() {
   return (
     <>
       <Head>
-        <title>{`${internship.title} - ${BRAND.name}`}</title>
+        <title>{internship.title} - {BRAND.name}</title>
         <meta name="description" content={internship.description} />
       </Head>
 

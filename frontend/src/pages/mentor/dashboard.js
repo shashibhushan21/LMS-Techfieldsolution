@@ -16,7 +16,7 @@ export default function MentorDashboard() {
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        router.push('/login');
+        router.push('/');
       } else if (user.role !== 'mentor') {
         router.push('/dashboard');
       } else {

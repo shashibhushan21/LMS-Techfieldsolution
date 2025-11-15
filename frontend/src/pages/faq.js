@@ -15,7 +15,7 @@ export default function FAQ() {
   return (
     <>
       <Head>
-        <title>{`FAQ - ${BRAND.name}`}</title>
+        <title>FAQ - {BRAND.name}</title>
       </Head>
       <Navbar />
       <main className="bg-white">

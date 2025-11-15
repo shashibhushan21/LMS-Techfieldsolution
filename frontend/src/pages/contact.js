@@ -18,7 +18,7 @@ export default function Contact() {
   return (
     <>
       <Head>
-        <title>{`Contact - ${BRAND.name}`}</title>
+        <title>Contact - {BRAND.name}</title>
         <meta name="description" content={`Contact ${BRAND.name}`} />
       </Head>
       <Navbar />
