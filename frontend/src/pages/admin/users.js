@@ -5,6 +5,7 @@ import apiClient from '@/utils/apiClient';
 import RoleBadge from '@/components/admin/RoleBadge';
 import EmptyState from '@/components/admin/EmptyState';
 import Button from '@/components/ui/Button';
+import Avatar from '@/components/ui/Avatar';
 import SectionHeader from '@/components/ui/SectionHeader';
 import { Card, CardContent } from '@/components/ui/Card';
 import { FiSearch, FiUserPlus } from 'react-icons/fi';
@@ -127,7 +128,10 @@ export default function AdminUsers() {
                   {filtered.map(u => (
                     <tr key={u._id} className="hover:bg-neutral-50 transition">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-neutral-900">{u.firstName} {u.lastName}</div>
+                        <div className="flex items-center gap-3">
+                          <Avatar src={u.avatar} name={`${u.firstName} ${u.lastName}`} size="sm" />
+                          <div className="font-medium text-neutral-900">{u.firstName} {u.lastName}</div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-neutral-600">{u.email}</td>
                       <td className="px-4 py-3"><RoleBadge role={u.role} /></td>

@@ -4,6 +4,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import apiClient from '@/utils/apiClient';
 import SectionHeader from '@/components/ui/SectionHeader';
 import Button from '@/components/ui/Button';
+import Avatar from '@/components/ui/Avatar';
 import StatusBadge from '@/components/admin/StatusBadge';
 import EmptyState from '@/components/admin/EmptyState';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -155,11 +156,18 @@ export default function AdminEnrollments() {
                   {filtered.map(enrollment => (
                     <tr key={enrollment._id} className="hover:bg-neutral-50 transition">
                       <td className="px-4 py-3">
-                        <div>
-                          <div className="font-medium text-neutral-900">
-                            {enrollment.user?.firstName} {enrollment.user?.lastName}
+                        <div className="flex items-center gap-3">
+                          <Avatar 
+                            src={enrollment.user?.avatar} 
+                            name={`${enrollment.user?.firstName} ${enrollment.user?.lastName}`} 
+                            size="sm" 
+                          />
+                          <div>
+                            <div className="font-medium text-neutral-900">
+                              {enrollment.user?.firstName} {enrollment.user?.lastName}
+                            </div>
+                            <div className="text-xs text-neutral-500">{enrollment.user?.email}</div>
                           </div>
-                          <div className="text-xs text-neutral-500">{enrollment.user?.email}</div>
                         </div>
                       </td>
                       <td className="px-4 py-3">

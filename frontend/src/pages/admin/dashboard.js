@@ -27,16 +27,33 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Try primary endpoint first, fallback to alternate
-      let response;
-      try {
-        response = await apiClient.get('/analytics/dashboard/admin');
-      } catch (e) {
-        response = await apiClient.get('/analytics/admin-dashboard');
-      }
-      setDashboardData(response.data.data || response.data);
+      setLoading(true);
+      const response = await apiClient.get('/analytics/dashboard/admin');
+      console.log('Admin dashboard response:', response.data);
+      
+      const data = response.data.data;
+      
+      // Transform the data to match our component structure
+      setDashboardData({
+        stats: {
+          totalUsers: data.overview?.totalUsers || 0,
+          totalInterns: data.overview?.totalInterns || 0,
+          totalMentors: data.overview?.totalMentors || 0,
+          totalInternships: data.overview?.totalInternships || 0,
+          activeInternships: data.overview?.activeEnrollments || 0,
+          totalEnrollments: data.overview?.totalEnrollments || 0
+        },
+        recentStats: {
+          newUsers: data.recent?.enrollmentsLast30Days || 0,
+          newEnrollments: data.recent?.enrollmentsLast30Days || 0
+        },
+        popularInternships: data.popularInternships || [],
+        recentEnrollments: [],
+        recentSubmissions: []
+      });
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      console.error('Error details:', error.response?.data);
       // Set minimal fallback data to prevent "Failed to load" message
       setDashboardData({
         stats: { totalUsers: 0, totalInterns: 0, totalMentors: 0, totalInternships: 0, activeInternships: 0, totalEnrollments: 0 },

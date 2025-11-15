@@ -39,17 +39,26 @@ export default function Dashboard() {
       
       // Fetch enrollments
       const enrollmentsRes = await apiClient.get('/enrollments/my-enrollments');
+      console.log('Enrollments response:', enrollmentsRes.data);
       const enrollmentsData = enrollmentsRes.data.data || [];
       setEnrollments(enrollmentsData);
 
       // Fetch submissions
       const submissionsRes = await apiClient.get('/submissions/my-submissions');
+      console.log('Submissions response:', submissionsRes.data);
       const submissionsData = submissionsRes.data.data || [];
       setRecentSubmissions(submissionsData.slice(0, 5));
 
       // Calculate stats
       const completedCount = submissionsData.filter(s => s.status === 'graded').length;
       const pendingCount = submissionsData.filter(s => s.status === 'submitted').length;
+      
+      console.log('Stats:', {
+        enrollments: enrollmentsData.length,
+        submissions: submissionsData.length,
+        completed: completedCount,
+        pending: pendingCount
+      });
       
       setStats({
         enrolledInternships: enrollmentsData.length,
@@ -59,6 +68,7 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error details:', error.response?.data);
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);

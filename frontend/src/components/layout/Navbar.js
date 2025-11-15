@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { FiMenu, FiBell, FiUser, FiLogOut } from 'react-icons/fi';
 import { useState, useMemo } from 'react';
 import { BRAND } from '@/config/brand';
+import Avatar from '@/components/ui/Avatar';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -65,7 +66,7 @@ export default function Navbar() {
                   </Link>
                   <div className="relative group">
                     <button className="flex items-center gap-2 text-neutral-700 hover:text-primary-700" aria-haspopup="menu" aria-expanded="false">
-                      <img src={user?.avatar || '/default-avatar.png'} alt={user?.firstName || 'User'} className="w-8 h-8 rounded-full" />
+                      <Avatar src={user?.avatar} name={`${user?.firstName} ${user?.lastName}`} size="sm" />
                       <span className="font-medium hidden lg:inline">{user?.firstName}</span>
                     </button>
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 border border-neutral-200 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity">
