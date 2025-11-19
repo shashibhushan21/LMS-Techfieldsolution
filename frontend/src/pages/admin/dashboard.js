@@ -97,15 +97,15 @@ export default function AdminDashboard() {
       </Head>
 
       <AdminLayout>
-        <div className="space-y-6">
-          <div className="bg-white border border-neutral-200 rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-soft">
+        <div className="space-y-4">
+          <div className="bg-white border border-neutral-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-sm">
             <div>
-              <h1 className="text-2xl md:text-3xl font-heading font-bold text-neutral-900">Admin Dashboard</h1>
-              <p className="text-neutral-600 mt-1">Platform overview and performance metrics</p>
+              <h1 className="text-xl md:text-2xl font-heading font-bold text-neutral-900">Admin Dashboard</h1>
+              <p className="text-sm text-neutral-600 mt-0.5">Platform overview and performance metrics</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
             <StatsCard
               title="Total Users"
               value={stats.totalUsers || 0}
@@ -142,22 +142,22 @@ export default function AdminDashboard() {
           </div>
 
           {dashboardData.popularInternships && dashboardData.popularInternships.length > 0 && (
-            <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Popular Internships</h2>
+            <div className="bg-white border border-neutral-200 rounded-lg shadow-sm p-3">
+              <h2 className="text-base font-semibold text-neutral-900 mb-3">Popular Internships</h2>
               <div className="overflow-auto">
-                <table className="min-w-full text-sm">
+                <table className="min-w-full text-xs">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
+                      <th className="px-3 py-1.5 text-left font-medium text-neutral-600">
                         Internship
                       </th>
-                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
+                      <th className="px-3 py-1.5 text-left font-medium text-neutral-600">
                         Category
                       </th>
-                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
+                      <th className="px-3 py-1.5 text-left font-medium text-neutral-600">
                         Enrollments
                       </th>
-                      <th className="px-4 py-2 text-left font-medium text-neutral-600">
+                      <th className="px-3 py-1.5 text-left font-medium text-neutral-600">
                         Status
                       </th>
                     </tr>
@@ -165,10 +165,10 @@ export default function AdminDashboard() {
                   <tbody className="bg-white">
                     {dashboardData.popularInternships.slice(0, 5).map((internship) => (
                       <tr key={internship._id} className="border-t border-neutral-100">
-                        <td className="px-4 py-2 font-medium text-neutral-900">{internship.title}</td>
-                        <td className="px-4 py-2 text-neutral-600">{internship.category}</td>
-                        <td className="px-4 py-2 text-neutral-900">{internship.enrollmentCount}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-3 py-1.5 font-medium text-neutral-900">{internship.title}</td>
+                        <td className="px-3 py-1.5 text-neutral-600">{internship.category}</td>
+                        <td className="px-3 py-1.5 text-neutral-900">{internship.enrollmentCount}</td>
+                        <td className="px-3 py-1.5">
                           <span className={`px-2 py-1 text-xs rounded-full font-medium ${internship.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}>{internship.status}</span>
                         </td>
                       </tr>
@@ -179,17 +179,17 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div>
-              <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
-                <h2 className="text-lg font-semibold text-neutral-900 mb-4">Recent Enrollments</h2>
+              <div className="bg-white border border-neutral-200 rounded-lg shadow-sm p-3">
+                <h2 className="text-base font-semibold text-neutral-900 mb-2">Recent Enrollments</h2>
                 {dashboardData.recentEnrollments && dashboardData.recentEnrollments.length > 0 ? (
                   <div className="divide-y divide-neutral-100">
                     {dashboardData.recentEnrollments.slice(0, 5).map((enrollment) => (
-                      <div key={enrollment._id} className="p-4">
+                      <div key={enrollment._id} className="py-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-neutral-900">
+                            <p className="text-xs font-medium text-neutral-900">
                               {enrollment.user?.name || enrollment.user?.firstName}
                             </p>
                             <p className="text-xs text-neutral-600 mt-0.5">{enrollment.internship?.title}</p>
@@ -210,21 +210,21 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="p-4 text-neutral-500 text-center text-sm">No recent enrollments</p>
+                  <p className="py-6 text-neutral-500 text-center text-xs">No recent enrollments</p>
                 )}
               </div>
             </div>
 
             <div>
-              <div className="bg-white border border-neutral-200 rounded-xl shadow-soft p-4">
-                <h2 className="text-lg font-semibold text-neutral-900 mb-4">Recent Submissions</h2>
+              <div className="bg-white border border-neutral-200 rounded-lg shadow-sm p-3">
+                <h2 className="text-base font-semibold text-neutral-900 mb-2">Recent Submissions</h2>
                 {dashboardData.recentSubmissions && dashboardData.recentSubmissions.length > 0 ? (
                   <div className="divide-y divide-neutral-100">
                     {dashboardData.recentSubmissions.slice(0, 5).map((submission) => (
-                      <div key={submission._id} className="p-4">
+                      <div key={submission._id} className="py-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-neutral-900">
+                            <p className="text-xs font-medium text-neutral-900">
                               {submission.user?.name || submission.user?.firstName}
                             </p>
                             <p className="text-xs text-neutral-600 mt-0.5">{submission.assignment?.title}</p>
@@ -243,7 +243,7 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="p-4 text-neutral-500 text-center text-sm">No recent submissions</p>
+                  <p className="py-6 text-neutral-500 text-center text-xs">No recent submissions</p>
                 )}
               </div>
             </div>

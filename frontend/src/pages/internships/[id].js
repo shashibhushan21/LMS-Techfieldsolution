@@ -144,7 +144,11 @@ export default function InternshipDetail() {
               <div className="flex flex-wrap gap-6 text-primary-100">
                 <div className="flex items-center">
                   <FiClock className="w-5 h-5 mr-2" />
-                  <span>{internship.duration} weeks</span>
+                  <span>
+                    {typeof internship.duration === 'object'
+                      ? `${internship.duration.weeks || 0} weeks`
+                      : `${internship.duration} weeks`}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <FiBookOpen className="w-5 h-5 mr-2" />
@@ -222,7 +226,9 @@ export default function InternshipDetail() {
                             </div>
                             {module.duration && (
                               <span className="text-sm text-gray-500 ml-4">
-                                {module.duration} hours
+                                {typeof module.duration === 'object'
+                                  ? `${module.duration.hours || 0}h ${module.duration.minutes || 0}m`
+                                  : `${module.duration} hours`}
                               </span>
                             )}
                           </div>
@@ -278,11 +284,13 @@ export default function InternshipDetail() {
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
                         <span className="text-primary-600 font-semibold text-lg">
-                          {internship.mentor.name.charAt(0)}
+                          {internship.mentor.name?.charAt(0) || internship.mentor.firstName?.charAt(0) || 'M'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{internship.mentor.name}</p>
+                        <p className="font-medium text-gray-900">
+                          {internship.mentor.name || `${internship.mentor.firstName || ''} ${internship.mentor.lastName || ''}`.trim() || 'Mentor'}
+                        </p>
                         <p className="text-sm text-gray-500">{internship.mentor.email}</p>
                       </div>
                     </div>

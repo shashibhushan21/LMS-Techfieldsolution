@@ -147,7 +147,11 @@ export default function Internships() {
                         <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                           <div className="flex items-center">
                             <FiClock className="w-4 h-4 mr-2" />
-                            <span>{internship.duration} weeks</span>
+                            <span>
+                              {typeof internship.duration === 'object'
+                                ? `${internship.duration.weeks || 0} weeks`
+                                : `${internship.duration} weeks`}
+                            </span>
                           </div>
                           <div className="flex items-center">
                             <FiBookOpen className="w-4 h-4 mr-2" />

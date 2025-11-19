@@ -50,16 +50,16 @@ export default function Home() {
         <meta name="description" content="Sign in to access your learning dashboard" />
       </Head>
 
-      <div className="min-h-screen flex">
+      <div className="h-screen flex overflow-hidden">
         {/* Decorative Left Panel - Desktop Only */}
         <DecorativePanel brandName={BRAND.name} />
 
         {/* Right Panel - Login Form */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100 relative">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-y-auto">
           {/* Mobile Background */}
           <MobileBackground />
 
-          <div className="w-full max-w-md relative z-10 animate-scale-in">
+          <div className="w-full max-w-md relative z-10 animate-scale-in my-8">
             {/* Mobile Header */}
             <MobileHeader brandName={BRAND.name} />
 

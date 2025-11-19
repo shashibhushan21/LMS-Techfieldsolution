@@ -8,12 +8,6 @@ export default function DecorativePanel({ brandName }) {
     { icon: FiCheck, text: 'Build your professional portfolio' }
   ];
 
-  const stats = [
-    { value: '1000+', label: 'Students' },
-    { value: '50+', label: 'Programs' },
-    { value: '95%', label: 'Success Rate' }
-  ];
-
   return (
     <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 relative overflow-hidden">
       {/* Animated Background */}
@@ -50,16 +44,6 @@ export default function DecorativePanel({ brandName }) {
                   <feature.icon className="w-6 h-6" />
                 </div>
                 <p className="text-lg">{feature.text}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 pt-8 border-t border-white/20">
-            {stats.map((stat, index) => (
-              <div key={index}>
-                <div className="text-3xl font-bold">{stat.value}</div>
-                <div className="text-sm text-primary-200">{stat.label}</div>
               </div>
             ))}
           </div>

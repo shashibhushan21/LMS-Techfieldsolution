@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 
 export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
@@ -37,10 +38,23 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
   const currentErrors = { ...errors, ...formErrors };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10 space-y-6 border border-gray-200/50">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-heading font-bold text-gray-900">Sign In</h2>
-        <p className="text-gray-600">Enter your credentials to access your dashboard</p>
+    <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 space-y-4 border border-gray-200/50">
+      {/* Logo */}
+      <div className="flex justify-center">
+        <div className="relative w-20 h-20">
+          <Image 
+            src="/assets/images/Logo.png" 
+            alt="TechFieldSolutionLMS Logo"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1 text-center">
+        <h2 className="text-2xl font-heading font-bold text-gray-900">Welcome Back</h2>
+        <p className="text-sm text-gray-600">Sign in to continue your learning journey</p>
       </div>
 
       {currentErrors.submit && (
@@ -53,11 +67,11 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-3" noValidate>
         {/* Email Field */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email address
+        <div className="space-y-1.5">
+          <label htmlFor="email" className="block text-xs font-semibold text-gray-700">
+            Email Address
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -80,26 +94,26 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 setEmail(e.target.value);
                 if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
               }}
-              className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+              className={`block w-full pl-10 pr-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
                 currentErrors.email 
                   ? 'border-red-300 bg-red-50' 
-                  : 'border-gray-300 hover:border-gray-400 focus:border-primary-500'
+                  : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
               }`}
-              placeholder="you@example.com"
+              placeholder="Enter your email"
               aria-invalid={!!currentErrors.email}
               aria-describedby={currentErrors.email ? 'email-error' : undefined}
             />
           </div>
           {currentErrors.email && (
-            <p id="email-error" className="text-sm text-red-600 animate-fade-in" role="alert">
-              {currentErrors.email}
+            <p id="email-error" className="text-sm text-red-600 animate-fade-in flex items-center gap-1" role="alert">
+              <span className="text-red-500">⚠</span> {currentErrors.email}
             </p>
           )}
         </div>
 
         {/* Password Field */}
-        <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="block text-xs font-semibold text-gray-700">
             Password
           </label>
           <div className="relative group">
@@ -123,12 +137,12 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 setPassword(e.target.value);
                 if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
               }}
-              className={`block w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+              className={`block w-full pl-10 pr-10 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
                 currentErrors.password 
                   ? 'border-red-300 bg-red-50' 
-                  : 'border-gray-300 hover:border-gray-400 focus:border-primary-500'
+                  : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
               }`}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               aria-invalid={!!currentErrors.password}
               aria-describedby={currentErrors.password ? 'password-error' : undefined}
             />
@@ -138,16 +152,12 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
               className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-primary-600 transition-colors"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              {showPassword ? (
-                <FiEyeOff className="h-5 w-5 text-gray-400" />
-              ) : (
-                <FiEye className="h-5 w-5 text-gray-400" />
-              )}
+              {showPassword ? <FiEyeOff className="h-5 w-5 text-gray-400" /> : <FiEye className="h-5 w-5 text-gray-400" />}
             </button>
           </div>
           {currentErrors.password && (
-            <p id="password-error" className="text-sm text-red-600 animate-fade-in" role="alert">
-              {currentErrors.password}
+            <p id="password-error" className="text-sm text-red-600 animate-fade-in flex items-center gap-1" role="alert">
+              <span className="text-red-500">⚠</span> {currentErrors.password}
             </p>
           )}
         </div>
@@ -159,15 +169,15 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
               id="remember-me" 
               name="remember-me" 
               type="checkbox" 
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer transition-colors" 
+              className="h-3.5 w-3.5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer transition-colors" 
             />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+            <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-700 cursor-pointer">
               Remember me
             </label>
           </div>
           <Link 
             href="/forgot-password" 
-            className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors hover:underline"
           >
             Forgot password?
           </Link>
@@ -177,7 +187,7 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg hover:shadow-xl"
+          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-semibold py-2.5 px-4 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:scale-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg hover:shadow-xl"
           aria-busy={loading}
         >
           {loading ? (
@@ -198,8 +208,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
       </form>
 
       {/* Sign Up Link */}
-      <div className="pt-6 border-t border-gray-200 text-center">
-        <p className="text-sm text-gray-600">
+      <div className="pt-3 border-t border-gray-200 text-center">
+        <p className="text-xs text-gray-600">
           Don&apos;t have an account?{' '}
           <Link 
             href="/register" 
@@ -208,16 +218,6 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
             Create one now
           </Link>
         </p>
-      </div>
-
-      {/* Demo Credentials */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-xs font-semibold text-blue-900 mb-2">Demo Credentials:</p>
-        <div className="space-y-1 text-xs text-blue-800">
-          <p><strong>Admin:</strong> shashicoeb@gmail.com / Shashi@123</p>
-          <p><strong>Mentor:</strong> sarah.johnson@techfield.com / Password123</p>
-          <p><strong>Intern:</strong> amit.kumar@example.com / Password123</p>
-        </div>
       </div>
 
       <style jsx>{`
