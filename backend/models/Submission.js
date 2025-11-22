@@ -43,6 +43,10 @@ const SubmissionSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  liveLink: {
+    type: String,
+    trim: true
+  },
   isLate: {
     type: Boolean,
     default: false
@@ -88,7 +92,7 @@ const SubmissionSchema = new mongoose.Schema({
 SubmissionSchema.index({ assignment: 1, user: 1, attemptNumber: 1 }, { unique: true });
 
 // Check if submission is late
-SubmissionSchema.pre('save', async function(next) {
+SubmissionSchema.pre('save', async function (next) {
   if (this.isModified('submittedAt') && this.submittedAt) {
     const assignment = await this.model('Assignment').findById(this.assignment);
     if (assignment && this.submittedAt > assignment.dueDate) {
@@ -99,7 +103,7 @@ SubmissionSchema.pre('save', async function(next) {
 });
 
 // Calculate pass/fail when score is set
-SubmissionSchema.pre('save', async function(next) {
+SubmissionSchema.pre('save', async function (next) {
   if (this.isModified('score') && this.score !== null) {
     const assignment = await this.model('Assignment').findById(this.assignment);
     if (assignment) {

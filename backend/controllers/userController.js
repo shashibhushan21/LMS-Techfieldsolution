@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Enrollment = require('../models/Enrollment');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../services/fileUploadService');
+const bcrypt = require('bcryptjs');
 
 /**
  * @desc    Get all users
@@ -109,9 +110,20 @@ exports.updateUser = async (req, res, next) => {
       });
     }
 
-    // Don't allow role or password update through this route
-    delete req.body.role;
-    delete req.body.password;
+    // Don't allow role or password update through this route for non-admins
+    if (req.user.role !== 'admin') {
+      delete req.body.role;
+      delete req.body.password;
+    }
+
+    // If password is empty string (from frontend form), remove it so it doesn't trigger validation or overwrite
+    if (!req.body.password) {
+      delete req.body.password;
+    } else {
+      // Hash password if it exists
+      const salt = await bcrypt.genSalt(10);
+      req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
 
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,

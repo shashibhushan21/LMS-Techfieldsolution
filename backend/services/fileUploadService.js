@@ -10,11 +10,15 @@ const { Readable } = require('stream');
 exports.uploadToCloudinary = async (file, folder = 'uploads') => {
   try {
     return new Promise((resolve, reject) => {
+      // Determine resource type based on file mimetype
+      const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'auto';
+
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: `${process.env.CLOUDINARY_FOLDER || 'lms'}/${folder}`,
-          resource_type: 'auto',
+          resource_type: resourceType,
           public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
+          format: file.mimetype === 'application/pdf' ? 'pdf' : undefined
         },
         (error, result) => {
           if (error) {
@@ -81,7 +85,7 @@ exports.uploadMultipleToCloudinary = async (files, folder = 'uploads') => {
  */
 exports.getSignedUrl = (publicId, expiresIn = 3600) => {
   const timestamp = Math.round(Date.now() / 1000) + expiresIn;
-  
+
   return cloudinary.utils.private_download_url(publicId, 'auto', {
     expires_at: timestamp,
     attachment: false

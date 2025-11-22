@@ -15,11 +15,20 @@ export default function Navbar() {
   const handleLogout = () => logout();
 
   const links = useMemo(
-    () => [
-      { href: '/internships', label: 'Internships' },
-      { href: '/about', label: 'About' },
-    ],
-    []
+    () => {
+      const allLinks = [
+        { href: '/internships', label: 'Internships' },
+        { href: '/about', label: 'About' },
+      ];
+
+      // Hide internships for interns as they have their own dashboard
+      if (user?.role === 'intern') {
+        return allLinks.filter(l => l.href !== '/internships');
+      }
+
+      return allLinks;
+    },
+    [user]
   );
 
   const isActive = (href) => router.pathname === href || router.pathname.startsWith(href + '/');
@@ -31,12 +40,12 @@ export default function Navbar() {
         <div className="container-custom">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href={BRAND.urls.home} className="flex items-center group" aria-label={`${BRAND.name} Home`}>
+            <div className="flex items-center group" aria-label={`${BRAND.name} Home`}>
               <span className="text-2xl font-heading font-extrabold tracking-tight">
-                <span className="text-primary-700 group-hover:text-primary-600 transition-colors">{BRAND.name.replace('LMS', '')}</span>
+                <span className="text-primary-700 transition-colors">{BRAND.name.replace('LMS', '')}</span>
                 <span className="text-neutral-900">LMS</span>
               </span>
-            </Link>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-6">
@@ -44,11 +53,10 @@ export default function Navbar() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={`relative font-medium transition-colors ${
-                    isActive(l.href)
-                      ? 'text-primary-700 after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:bg-primary-600'
-                      : 'text-neutral-700 hover:text-primary-700'
-                  }`}
+                  className={`relative font-medium transition-colors ${isActive(l.href)
+                    ? 'text-primary-700 after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:bg-primary-600'
+                    : 'text-neutral-700 hover:text-primary-700'
+                    }`}
                 >
                   {l.label}
                 </Link>

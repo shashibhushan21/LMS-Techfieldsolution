@@ -77,6 +77,9 @@ exports.createAssignment = async (req, res, next) => {
     // Set internship from module
     req.body.internship = moduleDoc.internship;
 
+    // Set createdBy to current user
+    req.body.createdBy = req.user.id;
+
     const assignment = await Assignment.create(req.body);
 
     res.status(201).json({
@@ -135,11 +138,15 @@ exports.deleteAssignment = async (req, res, next) => {
       });
     }
 
+    // Delete all submissions associated with this assignment
+    const Submission = require('../models/Submission');
+    await Submission.deleteMany({ assignment: req.params.id });
+
     await assignment.deleteOne();
 
     res.status(200).json({
       success: true,
-      message: 'Assignment deleted successfully'
+      message: 'Assignment and associated submissions deleted successfully'
     });
   } catch (error) {
     next(error);

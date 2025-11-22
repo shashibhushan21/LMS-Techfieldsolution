@@ -30,10 +30,24 @@ exports.getAdminDashboard = async (req, res, next) => {
     // Recent enrollments (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentEnrollments = await Enrollment.countDocuments({
+
+    const recentEnrollmentsCount = await Enrollment.countDocuments({
       createdAt: { $gte: thirtyDaysAgo }
     });
+
+    // Get recent enrollments with details
+    const recentEnrollmentsList = await Enrollment.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('user', 'firstName lastName email')
+      .populate('internship', 'title');
+
+    // Get recent submissions with details
+    const recentSubmissionsList = await Submission.find()
+      .sort({ submittedAt: -1 })
+      .limit(10)
+      .populate('user', 'firstName lastName email')
+      .populate('assignment', 'title');
 
     // Popular internships
     const popularInternships = await Enrollment.aggregate([
@@ -76,9 +90,11 @@ exports.getAdminDashboard = async (req, res, next) => {
           pendingSubmissions
         },
         recent: {
-          enrollmentsLast30Days: recentEnrollments
+          enrollmentsLast30Days: recentEnrollmentsCount
         },
-        popularInternships
+        popularInternships,
+        recentEnrollments: recentEnrollmentsList,
+        recentSubmissions: recentSubmissionsList
       }
     });
   } catch (error) {
@@ -178,24 +194,66 @@ exports.getInternDashboard = async (req, res, next) => {
       : 0;
 
     // Progress by enrollment
-    const progress = await Promise.all(
-      enrollments.map(async (enrollment) => {
-        const assignmentCount = await Assignment.countDocuments({
-          internship: enrollment.internship._id
-        });
+    const progressPromises = enrollments.map(async (enrollment) => {
+      if (!enrollment.internship) return null;
 
-        const submittedCount = await Submission.countDocuments({
-          user: req.user.id,
-          assignment: { $in: await Assignment.find({ internship: enrollment.internship._id }).distinct('_id') }
-        });
+      const assignmentCount = await Assignment.countDocuments({
+        internship: enrollment.internship._id
+      });
+
+      const submittedCount = await Submission.countDocuments({
+        user: req.user.id,
+        assignment: { $in: await Assignment.find({ internship: enrollment.internship._id }).distinct('_id') }
+      });
+
+      return {
+        internship: {
+          _id: enrollment.internship._id,
+          title: enrollment.internship.title
+        },
+        progress: enrollment.progress,
+        assignmentsCompleted: `${submittedCount}/${assignmentCount}`,
+        totalAssignments: assignmentCount,
+        completedAssignments: submittedCount
+      };
+    });
+
+    const progress = (await Promise.all(progressPromises)).filter(p => p !== null);
+
+    // Recent assignments (last 5 assignments from active enrollments)
+    const activeInternshipIds = activeEnrollments.map(e => e.internship._id);
+    const recentAssignments = await Assignment.find({
+      internship: { $in: activeInternshipIds }
+    })
+      .populate('internship', 'title')
+      .sort({ dueDate: -1 })
+      .limit(5)
+      .lean();
+
+    // Get submission status for each assignment
+    const assignmentsWithStatus = await Promise.all(
+      recentAssignments.map(async (assignment) => {
+        const submission = await Submission.findOne({
+          assignment: assignment._id,
+          user: req.user.id
+        }).select('status score submittedAt');
 
         return {
-          internship: enrollment.internship.title,
-          progress: enrollment.progress,
-          assignmentsCompleted: `${submittedCount}/${assignmentCount}`
+          ...assignment,
+          submission: submission || null
         };
       })
     );
+
+    // Recent certificates (for completed enrollments)
+    const Certificate = require('../models/Certificate');
+    const recentCertificates = await Certificate.find({
+      user: req.user.id
+    })
+      .populate('internship', 'title')
+      .sort({ issueDate: -1 })
+      .limit(3)
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -208,7 +266,9 @@ exports.getInternDashboard = async (req, res, next) => {
           gradedSubmissions,
           averageScore: Math.round(averageScore * 10) / 10
         },
-        progress
+        progress,
+        recentAssignments: assignmentsWithStatus,
+        recentCertificates
       }
     });
   } catch (error) {

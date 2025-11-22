@@ -60,7 +60,7 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
 
       {currentErrors.submit && (
         <div
-          className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm animate-shake"
+          className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm animate-fade-in"
           role="alert"
           aria-live="assertive"
         >
@@ -78,8 +78,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FiMail
                 className={`h-5 w-5 transition-colors ${currentErrors.email
-                    ? 'text-red-400'
-                    : 'text-gray-400 group-focus-within:text-primary-500'
+                  ? 'text-red-400'
+                  : 'text-gray-400 group-focus-within:text-primary-500'
                   }`}
               />
             </div>
@@ -95,8 +95,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
               }}
               className={`block w-full pl-10 pr-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${currentErrors.email
-                  ? 'border-red-300 bg-red-50'
-                  : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
+                ? 'border-red-300 bg-red-50'
+                : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
                 }`}
               placeholder="Enter your email"
               aria-invalid={!!currentErrors.email}
@@ -119,8 +119,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FiLock
                 className={`h-5 w-5 transition-colors ${currentErrors.password
-                    ? 'text-red-400'
-                    : 'text-gray-400 group-focus-within:text-primary-500'
+                  ? 'text-red-400'
+                  : 'text-gray-400 group-focus-within:text-primary-500'
                   }`}
               />
             </div>
@@ -136,8 +136,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
               }}
               className={`block w-full pl-10 pr-10 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${currentErrors.password
-                  ? 'border-red-300 bg-red-50'
-                  : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
+                ? 'border-red-300 bg-red-50'
+                : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
                 }`}
               placeholder="Enter your password"
               aria-invalid={!!currentErrors.password}

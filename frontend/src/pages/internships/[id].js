@@ -14,6 +14,7 @@ import {
   FiBookOpen,
   FiAward,
   FiCheckCircle,
+  FiArrowLeft,
 } from 'react-icons/fi';
 import { BRAND } from '@/config/brand';
 import Button from '@/components/ui/Button';
@@ -30,26 +31,17 @@ export default function InternshipDetail() {
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
-    // Check if user is intern and redirect them
-    if (isAuthenticated && user && user.role === 'intern') {
-      router.push('/dashboard');
-      return;
-    }
-
     if (id) {
       fetchInternshipDetails();
     }
-  }, [id, isAuthenticated, user, router]);
+  }, [id, isAuthenticated, user]);
 
   const fetchInternshipDetails = async () => {
     try {
-      const [internshipRes, modulesRes] = await Promise.all([
-        apiClient.get(`/internships/${id}`),
-        apiClient.get(`/modules?internship=${id}`),
-      ]);
+      const internshipRes = await apiClient.get(`/internships/${id}`);
 
       setInternship(internshipRes.data.data);
-      setModules(modulesRes.data.data || []);
+      setModules(internshipRes.data.data.modules || []);
 
       // Check if user is enrolled
       if (isAuthenticated) {
@@ -126,6 +118,17 @@ export default function InternshipDetail() {
       <Navbar />
 
       <main className="min-h-screen bg-gray-50">
+        {/* Back Button */}
+        <div className="container-custom pt-6">
+          <button
+            onClick={() => user?.role === 'intern' ? router.push('/dashboard/internships') : router.push('/internships')}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
+          >
+            <FiArrowLeft className="w-4 h-4" />
+            <span>Back to Internships</span>
+          </button>
+        </div>
+
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-16">
           <div className="container-custom">
@@ -215,23 +218,50 @@ export default function InternshipDetail() {
                       {modules.map((module, index) => (
                         <div
                           key={module._id}
-                          className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
+                          className="border border-gray-200 rounded-lg overflow-hidden"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 mb-1">
-                                Module {index + 1}: {module.title}
-                              </h3>
-                              <p className="text-sm text-gray-600">{module.description}</p>
+                          <div className="p-4 bg-gray-50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 mb-1">
+                                  Module {module.order || index + 1}: {module.title}
+                                </h3>
+                                <p className="text-sm text-gray-600">{module.description}</p>
+                              </div>
+                              {module.duration && (
+                                <span className="text-sm text-gray-500 ml-4">
+                                  {typeof module.duration === 'object'
+                                    ? `${module.duration.hours || 0}h`
+                                    : `${module.duration} hours`}
+                                </span>
+                              )}
                             </div>
-                            {module.duration && (
-                              <span className="text-sm text-gray-500 ml-4">
-                                {typeof module.duration === 'object'
-                                  ? `${module.duration.hours || 0}h ${module.duration.minutes || 0}m`
-                                  : `${module.duration} hours`}
-                              </span>
-                            )}
                           </div>
+
+                          {/* Assignments */}
+                          {module.assignments && module.assignments.length > 0 && (
+                            <div className="p-4 bg-white border-t border-gray-200">
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">Assignments</h4>
+                              <div className="space-y-2">
+                                {module.assignments.map((assignment) => (
+                                  <div
+                                    key={assignment._id}
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                  >
+                                    <div className="flex-1">
+                                      <p className="text-sm font-medium text-gray-900">{assignment.title}</p>
+                                      <p className="text-xs text-gray-500 mt-0.5">
+                                        Due: {new Date(assignment.dueDate).toLocaleDateString()} • {assignment.type}
+                                      </p>
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {assignment.maxScore} pts
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -246,67 +276,66 @@ export default function InternshipDetail() {
             <div className="lg:col-span-1">
               <Card className="sticky top-6">
                 <CardContent className="p-6">
-                {/* Enrollment Status */}
-                {enrollment ? (
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600">Status:</span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          enrollment.status === 'approved' || enrollment.status === 'active'
+                  {/* Enrollment Status */}
+                  {enrollment ? (
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600">Status:</span>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${enrollment.status === 'approved' || enrollment.status === 'active'
                             ? 'bg-green-100 text-green-800'
                             : enrollment.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {enrollment.status}
-                      </span>
-                    </div>
-                    {enrollment.status === 'approved' || enrollment.status === 'active' ? (
-                      <Button href="/dashboard" className="w-full">Go to Dashboard</Button>
-                    ) : (
-                      <p className="text-sm text-gray-600">
-                        Your enrollment is pending approval. You'll be notified once approved.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <Button onClick={handleEnroll} disabled={enrolling} className="w-full mb-6">
-                    {enrolling ? 'Enrolling...' : 'Enroll Now'}
-                  </Button>
-                )}
-
-                {/* Mentor Info */}
-                {internship.mentor && (
-                  <div className="border-t border-gray-200 pt-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Your Mentor</h3>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-primary-600 font-semibold text-lg">
-                          {internship.mentor.name?.charAt(0) || internship.mentor.firstName?.charAt(0) || 'M'}
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                            }`}
+                        >
+                          {enrollment.status}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {internship.mentor.name || `${internship.mentor.firstName || ''} ${internship.mentor.lastName || ''}`.trim() || 'Mentor'}
+                      {enrollment.status === 'approved' || enrollment.status === 'active' ? (
+                        <Button href="/dashboard" className="w-full">Go to Dashboard</Button>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          Your enrollment is pending approval. You'll be notified once approved.
                         </p>
-                        <p className="text-sm text-gray-500">{internship.mentor.email}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button onClick={handleEnroll} disabled={enrolling} className="w-full mb-6">
+                      {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                    </Button>
+                  )}
+
+                  {/* Mentor Info */}
+                  {internship.mentor && (
+                    <div className="border-t border-gray-200 pt-6">
+                      <h3 className="font-semibold text-gray-900 mb-3">Your Mentor</h3>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                          <span className="text-primary-600 font-semibold text-lg">
+                            {internship.mentor.name?.charAt(0) || internship.mentor.firstName?.charAt(0) || 'M'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {internship.mentor.name || `${internship.mentor.firstName || ''} ${internship.mentor.lastName || ''}`.trim() || 'Mentor'}
+                          </p>
+                          <p className="text-sm text-gray-500">{internship.mentor.email}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Certificate */}
-                <div className="border-t border-gray-200 pt-6 mt-6">
-                  <div className="flex items-center text-gray-700 mb-2">
-                    <FiAward className="w-5 h-5 mr-2 text-primary-600" />
-                    <span className="font-medium">Certificate of Completion</span>
+                  {/* Certificate */}
+                  <div className="border-t border-gray-200 pt-6 mt-6">
+                    <div className="flex items-center text-gray-700 mb-2">
+                      <FiAward className="w-5 h-5 mr-2 text-primary-600" />
+                      <span className="font-medium">Certificate of Completion</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Earn a verified certificate upon successful completion
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Earn a verified certificate upon successful completion
-                  </p>
-                </div>
                 </CardContent>
               </Card>
             </div>

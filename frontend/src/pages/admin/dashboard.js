@@ -30,9 +30,9 @@ export default function AdminDashboard() {
       setLoading(true);
       const response = await apiClient.get('/analytics/dashboard/admin');
       console.log('Admin dashboard response:', response.data);
-      
+
       const data = response.data.data;
-      
+
       // Transform the data to match our component structure
       setDashboardData({
         stats: {
@@ -48,8 +48,8 @@ export default function AdminDashboard() {
           newEnrollments: data.recent?.enrollmentsLast30Days || 0
         },
         popularInternships: data.popularInternships || [],
-        recentEnrollments: [],
-        recentSubmissions: []
+        recentEnrollments: data.recentEnrollments || [],
+        recentSubmissions: data.recentSubmissions || []
       });
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -195,13 +195,12 @@ export default function AdminDashboard() {
                             <p className="text-xs text-neutral-600 mt-0.5">{enrollment.internship?.title}</p>
                           </div>
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              enrollment.status === 'approved'
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${enrollment.status === 'approved'
                                 ? 'bg-green-100 text-green-800'
                                 : enrollment.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}
                           >
                             {enrollment.status}
                           </span>
@@ -230,11 +229,10 @@ export default function AdminDashboard() {
                             <p className="text-xs text-neutral-600 mt-0.5">{submission.assignment?.title}</p>
                           </div>
                           <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              submission.status === 'graded'
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${submission.status === 'graded'
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-blue-100 text-blue-800'
-                            }`}
+                              }`}
                           >
                             {submission.status}
                           </span>

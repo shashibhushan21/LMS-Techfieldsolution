@@ -41,16 +41,21 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await apiClient.post('/auth/login', { email, password });
       const { token, user } = response.data;
-      
+
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-      
+
       return { success: true, user };
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed',
+        message: error.response?.data?.message || error.message || 'Login failed',
       };
     }
   };
@@ -59,16 +64,21 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await apiClient.post('/auth/register', userData);
       const { token, user } = response.data;
-      
+
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-      
+
       return { success: true, user };
     } catch (error) {
+      console.error('Registration error:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Registration failed',
+        message: error.response?.data?.message || error.message || 'Registration failed',
       };
     }
   };

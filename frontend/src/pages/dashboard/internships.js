@@ -74,7 +74,7 @@ export default function MyInternships() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                         <div className="flex items-center gap-2 text-xs text-gray-600">
                           <FiCalendar className="w-3.5 h-3.5" />
-                          <span>Enrolled: {new Date(enrollment.enrolledAt).toLocaleDateString()}</span>
+                          <span>Enrolled: {enrollment.createdAt ? new Date(enrollment.createdAt).toLocaleDateString() : 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-600">
                           <FiClock className="w-3.5 h-3.5" />
@@ -91,13 +91,12 @@ export default function MyInternships() {
                           <span>Level: {enrollment.internship?.level || 'N/A'}</span>
                         </div>
                         <div>
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            enrollment.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : enrollment.status === 'active'
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${enrollment.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : enrollment.status === 'active'
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                            }`}>
                             {enrollment.status}
                           </span>
                         </div>
@@ -134,13 +133,8 @@ export default function MyInternships() {
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <p className="text-gray-500 mb-4">You haven't enrolled in any internships yet</p>
-              <button
-                onClick={() => router.push('/internships')}
-                className="btn btn-primary"
-              >
-                Browse Internships
-              </button>
+              <p className="text-gray-500 mb-2">No internship enrolled yet</p>
+              <p className="text-sm text-gray-400">Contact your administrator to enroll in an internship.</p>
             </div>
           )}
         </div>

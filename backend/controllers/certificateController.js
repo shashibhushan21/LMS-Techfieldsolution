@@ -103,6 +103,9 @@ exports.generateCertificate = async (req, res, next) => {
       });
     }
 
+    // Generate certificate ID
+    const certificateId = `CERT-${Date.now()}`;
+
     // Generate PDF
     const certificateData = {
       internName: `${enrollment.user.firstName} ${enrollment.user.lastName}`,
@@ -111,7 +114,8 @@ exports.generateCertificate = async (req, res, next) => {
       company: enrollment.internship.company,
       completionDate: enrollment.completionDate,
       skills: enrollment.internship.skills,
-      score: enrollment.finalScore || 0
+      score: enrollment.finalScore || 0,
+      certificateId: certificateId
     };
 
     const pdfUrl = await generateCertificatePDF(certificateData);
@@ -121,9 +125,106 @@ exports.generateCertificate = async (req, res, next) => {
       user: enrollment.user._id,
       internship: enrollment.internship._id,
       enrollment: enrollmentId,
-      certificateUrl: pdfUrl,
+      pdfUrl: pdfUrl,
+      completionDate: enrollment.completionDate,
       issuedDate: new Date(),
-      certificateId: `CERT-${Date.now()}`
+      certificateId: certificateId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: certificate
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Generate certificate manually (admin override)
+ * @route   POST /api/certificates/generate-manual
+ * @access  Private/Admin
+ */
+exports.generateCertificateManual = async (req, res, next) => {
+  try {
+    const { userId, internshipId } = req.body;
+    const User = require('../models/User');
+    const Internship = require('../models/Internship');
+
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify internship exists
+    const internship = await Internship.findById(internshipId);
+    if (!internship) {
+      return res.status(404).json({
+        success: false,
+        message: 'Internship not found'
+      });
+    }
+
+    // Check if certificate already exists
+    const existingCertificate = await Certificate.findOne({
+      user: userId,
+      internship: internshipId
+    });
+
+    if (existingCertificate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Certificate already exists for this user and internship'
+      });
+    }
+
+    // Find or create enrollment
+    let enrollment = await Enrollment.findOne({
+      user: userId,
+      internship: internshipId
+    });
+
+    if (!enrollment) {
+      // Create a basic enrollment record for certificate tracking
+      enrollment = await Enrollment.create({
+        user: userId,
+        internship: internshipId,
+        status: 'completed',
+        enrolledAt: new Date(),
+        completionDate: new Date()
+      });
+    }
+
+    // Generate certificate ID
+    const certificateId = `CERT-${Date.now()}`;
+
+    // Generate PDF
+    const certificateData = {
+      internName: `${user.firstName} ${user.lastName}`,
+      internshipTitle: internship.title,
+      domain: internship.domain,
+      company: internship.company || 'TechFieldSolution',
+      completionDate: new Date(),
+      skills: internship.skills || [],
+      score: 0,
+      certificateId: certificateId
+    };
+
+    const pdfUrl = await generateCertificatePDF(certificateData);
+
+    // Create certificate record
+    const certificate = await Certificate.create({
+      user: userId,
+      internship: internshipId,
+      enrollment: enrollment._id,
+      pdfUrl: pdfUrl,
+      completionDate: new Date(),
+      issuedDate: new Date(),
+      certificateId: certificateId
     });
 
     res.status(201).json({
@@ -195,7 +296,7 @@ exports.downloadCertificate = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {
-        downloadUrl: certificate.certificateUrl
+        downloadUrl: certificate.pdfUrl
       }
     });
   } catch (error) {

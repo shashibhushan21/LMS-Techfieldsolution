@@ -8,10 +8,10 @@ const Module = require('../models/Module');
 exports.getInternships = async (req, res, next) => {
   try {
     const { domain, skillLevel, status, featured, search, sort } = req.query;
-    
+
     // Build query
     let query = {};
-    
+
     // Filters
     if (domain) query.domain = domain;
     if (skillLevel) query.skillLevel = skillLevel;
@@ -24,7 +24,7 @@ exports.getInternships = async (req, res, next) => {
       }
     }
     if (featured) query.featured = featured === 'true';
-    
+
     // Search
     if (search) {
       query.$or = [
@@ -46,7 +46,7 @@ exports.getInternships = async (req, res, next) => {
     const startIndex = (page - 1) * limit;
 
     const total = await Internship.countDocuments(query);
-    
+
     const internships = await Internship.find(query)
       .populate('mentor', 'firstName lastName avatar')
       .sort(sortOptions)
@@ -85,13 +85,15 @@ exports.getInternship = async (req, res, next) => {
     let modules = [];
     if (req.user) {
       const enrollment = await Enrollment.findOne({
-        intern: req.user.id,
+        user: req.user.id,
         internship: req.params.id,
         status: { $in: ['approved', 'active', 'completed'] }
       });
 
       if (enrollment || ['admin', 'mentor'].includes(req.user.role)) {
-        modules = await Module.find({ internship: req.params.id }).sort('order');
+        modules = await Module.find({ internship: req.params.id })
+          .sort('order')
+          .populate('assignments');
       }
     }
 

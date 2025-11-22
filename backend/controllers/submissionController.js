@@ -82,7 +82,7 @@ exports.getSubmission = async (req, res, next) => {
  */
 exports.submitAssignment = async (req, res, next) => {
   try {
-    const { assignment } = req.body;
+    const { assignment, submissionText, repositoryLink, liveLink } = req.body;
 
     // Verify assignment exists
     const assignmentDoc = await Assignment.findById(assignment);
@@ -107,17 +107,30 @@ exports.submitAssignment = async (req, res, next) => {
     }
 
     // Handle file upload if present
-    let fileUrls = [];
+    let filesArray = [];
     if (req.files && req.files.length > 0) {
       const { uploadMultipleToCloudinary } = require('../services/fileUploadService');
-      fileUrls = await uploadMultipleToCloudinary(req.files, 'uploads/assignments');
+      const fileUrls = await uploadMultipleToCloudinary(req.files, 'uploads/assignments');
+
+      // Format files to match the schema
+      filesArray = req.files.map((file, index) => ({
+        originalName: file.originalname,
+        fileName: file.filename || `file_${Date.now()}_${index}`,
+        fileUrl: fileUrls[index],
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        uploadedAt: new Date()
+      }));
     }
 
     const submission = await Submission.create({
       user: req.user.id,
       assignment,
-      content: req.body.content,
-      fileUrl: fileUrls[0] || null,
+      content: submissionText || req.body.content || '',
+      repositoryLink: repositoryLink || '',
+      liveLink: liveLink || '',
+      files: filesArray,
+      status: 'submitted',
       submittedAt: new Date()
     });
 

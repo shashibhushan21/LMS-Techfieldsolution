@@ -82,6 +82,13 @@ exports.enroll = async (req, res, next) => {
   try {
     const { internship } = req.body;
 
+    let userId = req.user.id;
+
+    // If admin, allow enrolling other users
+    if (req.user.role === 'admin' && req.body.user) {
+      userId = req.body.user;
+    }
+
     // Check if internship exists
     const internshipDoc = await Internship.findById(internship);
     if (!internshipDoc) {
@@ -93,22 +100,22 @@ exports.enroll = async (req, res, next) => {
 
     // Check if already enrolled
     const existingEnrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: userId,
       internship
     });
 
     if (existingEnrollment) {
       return res.status(400).json({
         success: false,
-        message: 'Already enrolled in this internship'
+        message: 'User is already enrolled in this internship'
       });
     }
 
     // Create enrollment
     const enrollment = await Enrollment.create({
-      user: req.user.id,
+      user: userId,
       internship,
-      status: 'pending'
+      status: req.user.role === 'admin' ? 'active' : 'pending'
     });
 
     res.status(201).json({
