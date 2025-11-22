@@ -86,7 +86,7 @@ export default function InternCertificates() {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                       <FiCalendar className="w-4 h-4" />
-                      <span>Issued: {new Date(certificate.issuedDate).toLocaleDateString()}</span>
+                      <span>Issued: {new Date(certificate.issueDate).toLocaleDateString()}</span>
                     </div>
 
                     <div className="flex items-center justify-center gap-2">

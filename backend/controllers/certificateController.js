@@ -23,7 +23,7 @@ exports.getCertificates = async (req, res, next) => {
     const certificates = await Certificate.find(query)
       .populate('user', 'firstName lastName email')
       .populate('internship', 'title domain company')
-      .sort({ issuedDate: -1 });
+      .sort({ issueDate: -1 });
 
     res.status(200).json({
       success: true,
@@ -127,7 +127,7 @@ exports.generateCertificate = async (req, res, next) => {
       enrollment: enrollmentId,
       pdfUrl: pdfUrl,
       completionDate: enrollment.completionDate,
-      issuedDate: new Date(),
+      issueDate: new Date(),
       certificateId: certificateId
     });
 
@@ -223,7 +223,7 @@ exports.generateCertificateManual = async (req, res, next) => {
       enrollment: enrollment._id,
       pdfUrl: pdfUrl,
       completionDate: new Date(),
-      issuedDate: new Date(),
+      issueDate: new Date(),
       certificateId: certificateId
     });
 
@@ -265,7 +265,7 @@ exports.getUserCertificates = async (req, res, next) => {
   try {
     const certificates = await Certificate.find({ user: req.params.userId })
       .populate('internship', 'title domain company')
-      .sort({ issuedDate: -1 });
+      .sort({ issueDate: -1 });
 
     res.status(200).json({
       success: true,

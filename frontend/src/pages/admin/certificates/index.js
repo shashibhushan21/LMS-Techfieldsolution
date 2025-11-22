@@ -227,7 +227,7 @@ export default function AdminCertificates() {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center text-sm text-gray-500">
                                                         <FiCalendar className="w-4 h-4 mr-2" />
-                                                        {new Date(certificate.issuedDate).toLocaleDateString()}
+                                                        {new Date(certificate.issueDate).toLocaleDateString()}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

@@ -217,7 +217,7 @@ export default function Progress() {
                                         <div className="flex-1">
                                             <h3 className="font-medium text-gray-900">{cert.internship?.title}</h3>
                                             <p className="text-sm text-gray-600">
-                                                Issued: {new Date(cert.issuedDate).toLocaleDateString()}
+                                                Issued: {new Date(cert.issueDate).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>
