@@ -109,56 +109,61 @@ export default function AdminAnnouncements() {
         ) : announcements.length === 0 ? (
           <Card className="mt-6">
             <CardContent className="py-12">
-              <EmptyState 
-                title="No announcements yet" 
+              <EmptyState
+                title="No announcements yet"
                 message="Create your first announcement to notify users about important updates."
               />
             </CardContent>
           </Card>
         ) : (
           <div className="mt-6 grid gap-4">
-            {announcements.map(announcement => (
-              <Card key={announcement._id} className={`border-l-4 ${typeColors[announcement.type || 'info'].replace('bg-', 'border-l-').split(' ')[0]}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">{typeIcons[announcement.type || 'info']}</span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeColors[announcement.type || 'info']}`}>
-                          {announcement.type || 'info'}
-                        </span>
-                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-neutral-100 text-neutral-700">
-                          {announcement.audience || 'all'}
-                        </span>
+            {announcements.map(announcement => {
+              const type = (announcement.type && typeColors[announcement.type]) ? announcement.type : 'info';
+              const colorClass = typeColors[type];
+
+              return (
+                <Card key={announcement._id} className={`border-l-4 ${colorClass.replace('bg-', 'border-l-').split(' ')[0]}`}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">{typeIcons[type]}</span>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${colorClass}`}>
+                            {type}
+                          </span>
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-neutral-100 text-neutral-700">
+                            {announcement.audience || 'all'}
+                          </span>
+                        </div>
+                        <CardTitle className="text-xl">{announcement.title}</CardTitle>
+                        <CardDescription className="mt-2 text-sm leading-relaxed">
+                          {announcement.message}
+                        </CardDescription>
+                        <p className="text-xs text-neutral-500 mt-3">
+                          Posted {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
+                        </p>
                       </div>
-                      <CardTitle className="text-xl">{announcement.title}</CardTitle>
-                      <CardDescription className="mt-2 text-sm leading-relaxed">
-                        {announcement.message}
-                      </CardDescription>
-                      <p className="text-xs text-neutral-500 mt-3">
-                        Posted {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
-                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(announcement)}
+                          className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-primary-600 transition"
+                          aria-label="Edit"
+                        >
+                          <FiEdit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(announcement._id)}
+                          className="p-2 rounded-lg hover:bg-red-50 text-neutral-600 hover:text-red-600 transition"
+                          aria-label="Delete"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(announcement)}
-                        className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-primary-600 transition"
-                        aria-label="Edit"
-                      >
-                        <FiEdit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(announcement._id)}
-                        className="p-2 rounded-lg hover:bg-red-50 text-neutral-600 hover:text-red-600 transition"
-                        aria-label="Delete"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))}
+                  </CardHeader>
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -170,8 +175,8 @@ export default function AdminAnnouncements() {
                 <h2 className="text-lg font-semibold text-neutral-900">
                   {editingId ? 'Edit Announcement' : 'New Announcement'}
                 </h2>
-                <button 
-                  onClick={() => setShowModal(false)} 
+                <button
+                  onClick={() => setShowModal(false)}
                   className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700"
                   aria-label="Close"
                 >

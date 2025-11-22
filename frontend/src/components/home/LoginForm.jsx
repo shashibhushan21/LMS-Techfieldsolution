@@ -27,7 +27,7 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -42,10 +42,11 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
       {/* Logo */}
       <div className="flex justify-center">
         <div className="relative w-20 h-20">
-          <Image 
-            src="/assets/images/Logo.png" 
+          <Image
+            src="/assets/images/Logo.png"
             alt="TechFieldSolutionLMS Logo"
             fill
+            sizes="80px"
             className="object-contain"
             priority
           />
@@ -58,9 +59,9 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
       </div>
 
       {currentErrors.submit && (
-        <div 
-          className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm animate-shake" 
-          role="alert" 
+        <div
+          className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm animate-shake"
+          role="alert"
           aria-live="assertive"
         >
           {currentErrors.submit}
@@ -75,12 +76,11 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiMail 
-                className={`h-5 w-5 transition-colors ${
-                  currentErrors.email 
-                    ? 'text-red-400' 
+              <FiMail
+                className={`h-5 w-5 transition-colors ${currentErrors.email
+                    ? 'text-red-400'
                     : 'text-gray-400 group-focus-within:text-primary-500'
-                }`} 
+                  }`}
               />
             </div>
             <input
@@ -94,11 +94,10 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 setEmail(e.target.value);
                 if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
               }}
-              className={`block w-full pl-10 pr-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
-                currentErrors.email 
-                  ? 'border-red-300 bg-red-50' 
+              className={`block w-full pl-10 pr-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${currentErrors.email
+                  ? 'border-red-300 bg-red-50'
                   : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
-              }`}
+                }`}
               placeholder="Enter your email"
               aria-invalid={!!currentErrors.email}
               aria-describedby={currentErrors.email ? 'email-error' : undefined}
@@ -118,12 +117,11 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
           </label>
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiLock 
-                className={`h-5 w-5 transition-colors ${
-                  currentErrors.password 
-                    ? 'text-red-400' 
+              <FiLock
+                className={`h-5 w-5 transition-colors ${currentErrors.password
+                    ? 'text-red-400'
                     : 'text-gray-400 group-focus-within:text-primary-500'
-                }`} 
+                  }`}
               />
             </div>
             <input
@@ -137,11 +135,10 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
                 setPassword(e.target.value);
                 if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
               }}
-              className={`block w-full pl-10 pr-10 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${
-                currentErrors.password 
-                  ? 'border-red-300 bg-red-50' 
+              className={`block w-full pl-10 pr-10 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all ${currentErrors.password
+                  ? 'border-red-300 bg-red-50'
                   : 'border-gray-200 hover:border-gray-300 focus:border-primary-500 bg-gray-50 focus:bg-white'
-              }`}
+                }`}
               placeholder="Enter your password"
               aria-invalid={!!currentErrors.password}
               aria-describedby={currentErrors.password ? 'password-error' : undefined}
@@ -165,18 +162,18 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
         {/* Remember Me & Forgot Password */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <input 
-              id="remember-me" 
-              name="remember-me" 
-              type="checkbox" 
-              className="h-3.5 w-3.5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer transition-colors" 
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              className="h-3.5 w-3.5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded cursor-pointer transition-colors"
             />
             <label htmlFor="remember-me" className="ml-2 block text-xs text-gray-700 cursor-pointer">
               Remember me
             </label>
           </div>
-          <Link 
-            href="/forgot-password" 
+          <Link
+            href="/forgot-password"
             className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors hover:underline"
           >
             Forgot password?
@@ -211,8 +208,8 @@ export default function LoginForm({ onSubmit, loading, errors: formErrors }) {
       <div className="pt-3 border-t border-gray-200 text-center">
         <p className="text-xs text-gray-600">
           Don&apos;t have an account?{' '}
-          <Link 
-            href="/register" 
+          <Link
+            href="/register"
             className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
           >
             Create one now

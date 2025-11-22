@@ -10,7 +10,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO for real-time features
 const io = socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3001'],
     methods: ['GET', 'POST']
   }
 });
