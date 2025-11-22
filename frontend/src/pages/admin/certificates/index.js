@@ -314,8 +314,8 @@ export default function AdminCertificates() {
                                         type="button"
                                         onClick={() => setGenerationMode('auto')}
                                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${generationMode === 'auto'
-                                                ? 'border-primary-600 text-primary-600'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                            ? 'border-primary-600 text-primary-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
                                         Completed Enrollments
@@ -324,8 +324,8 @@ export default function AdminCertificates() {
                                         type="button"
                                         onClick={() => setGenerationMode('manual')}
                                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${generationMode === 'manual'
-                                                ? 'border-primary-600 text-primary-600'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                                            ? 'border-primary-600 text-primary-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700'
                                             }`}
                                     >
                                         Manual Override
