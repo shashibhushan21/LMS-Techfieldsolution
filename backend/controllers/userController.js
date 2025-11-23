@@ -263,3 +263,63 @@ exports.getInternProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * @desc    Get contacts (admins and assigned mentors) for messaging
+ * @route   GET /api/users/contacts
+ * @access  Private
+ */
+exports.getContacts = async (req, res, next) => {
+  try {
+    // 1. Get all admins
+    const admins = await User.find({ role: 'admin' })
+      .select('firstName lastName avatar role email');
+
+    let mentors = [];
+    let interns = [];
+
+    // 2. Logic based on role
+    if (req.user.role === 'intern') {
+      // Interns see their assigned mentors
+      const enrollments = await Enrollment.find({ user: req.user.id })
+        .populate({
+          path: 'internship',
+          populate: {
+            path: 'mentor',
+            select: 'firstName lastName avatar role email'
+          }
+        });
+
+      // Extract unique mentors
+      const mentorMap = new Map();
+      enrollments.forEach(enrollment => {
+        if (enrollment.internship && enrollment.internship.mentor) {
+          const mentor = enrollment.internship.mentor;
+          if (!mentorMap.has(mentor._id.toString())) {
+            mentorMap.set(mentor._id.toString(), mentor);
+          }
+        }
+      });
+      mentors = Array.from(mentorMap.values());
+
+    } else if (req.user.role === 'admin') {
+      // Admins see all mentors and interns
+      mentors = await User.find({ role: 'mentor' })
+        .select('firstName lastName avatar role email');
+
+      interns = await User.find({ role: 'intern' })
+        .select('firstName lastName avatar role email');
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        admins,
+        mentors,
+        interns
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

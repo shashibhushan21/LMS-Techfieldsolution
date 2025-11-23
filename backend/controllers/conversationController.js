@@ -1,4 +1,4 @@
-const Conversation = require('../models/Conversation');
+const { Conversation, Message } = require('../models/Conversation');
 
 /**
  * @desc    Get all conversations for logged in user
@@ -11,6 +11,7 @@ exports.getConversations = async (req, res, next) => {
       participants: req.user.id
     })
       .populate('participants', 'firstName lastName avatar role')
+      .populate('lastMessage') // Populate the last message reference
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -31,8 +32,7 @@ exports.getConversations = async (req, res, next) => {
 exports.getConversation = async (req, res, next) => {
   try {
     const conversation = await Conversation.findById(req.params.id)
-      .populate('participants', 'firstName lastName avatar role')
-      .populate('messages.sender', 'firstName lastName avatar');
+      .populate('participants', 'firstName lastName avatar role');
 
     if (!conversation) {
       return res.status(404).json({
@@ -82,9 +82,13 @@ exports.createConversation = async (req, res, next) => {
     });
 
     if (existingConversation) {
+      const populated = await Conversation.findById(existingConversation._id)
+        .populate('participants', 'firstName lastName avatar role')
+        .populate('lastMessage');
+
       return res.status(200).json({
         success: true,
-        data: existingConversation
+        data: populated
       });
     }
 
@@ -132,22 +136,28 @@ exports.sendMessage = async (req, res, next) => {
       });
     }
 
-    conversation.messages.push({
+    // Create message document
+    const message = await Message.create({
+      conversation: conversation._id,
       sender: req.user.id,
-      content,
-      createdAt: new Date()
+      content
     });
 
-    conversation.lastMessage = content;
-    await conversation.save();
+    // Update conversation last message (handled by post-save hook in model, but we can ensure it here too if needed)
+    // The model hook does: await this.model('Conversation').findByIdAndUpdate(this.conversation, { lastMessage: this._id, lastMessageAt: this.createdAt });
 
+    // Return updated conversation with populated fields
     const updatedConversation = await Conversation.findById(conversation._id)
       .populate('participants', 'firstName lastName avatar role')
-      .populate('messages.sender', 'firstName lastName avatar');
+      .populate({
+        path: 'lastMessage',
+        populate: { path: 'sender', select: 'firstName lastName avatar' }
+      });
 
     res.status(200).json({
       success: true,
-      data: updatedConversation
+      data: updatedConversation,
+      message: message // Also return the message created
     });
   } catch (error) {
     next(error);
@@ -182,6 +192,8 @@ exports.deleteConversation = async (req, res, next) => {
       });
     }
 
+    // Delete all messages in this conversation
+    await Message.deleteMany({ conversation: conversation._id });
     await conversation.deleteOne();
 
     res.status(200).json({
@@ -200,8 +212,7 @@ exports.deleteConversation = async (req, res, next) => {
  */
 exports.getMessages = async (req, res, next) => {
   try {
-    const conversation = await Conversation.findById(req.params.id)
-      .populate('messages.sender', 'firstName lastName avatar');
+    const conversation = await Conversation.findById(req.params.id);
 
     if (!conversation) {
       return res.status(404).json({
@@ -222,10 +233,15 @@ exports.getMessages = async (req, res, next) => {
       });
     }
 
+    // Fetch messages referencing this conversation
+    const messages = await Message.find({ conversation: conversation._id })
+      .populate('sender', 'firstName lastName avatar')
+      .sort({ createdAt: 1 });
+
     res.status(200).json({
       success: true,
-      count: conversation.messages.length,
-      data: conversation.messages
+      count: messages.length,
+      data: messages
     });
   } catch (error) {
     next(error);
@@ -239,20 +255,28 @@ exports.getMessages = async (req, res, next) => {
  */
 exports.markAsRead = async (req, res, next) => {
   try {
-    const conversation = await Conversation.findOne({
-      'messages._id': req.params.messageId
-    });
+    const message = await Message.findById(req.params.messageId);
 
-    if (!conversation) {
+    if (!message) {
       return res.status(404).json({
         success: false,
         message: 'Message not found'
       });
     }
 
-    const message = conversation.messages.id(req.params.messageId);
-    message.isRead = true;
-    await conversation.save();
+    // Check if user is allowed to mark as read (must be in conversation)
+    // For simplicity, we assume if they can access the message ID, they can read it, 
+    // or we should check conversation participants.
+    // Let's check conversation participants:
+    const conversation = await Conversation.findById(message.conversation);
+    if (conversation && conversation.participants.includes(req.user.id)) {
+      // Add user to readBy array if not already there
+      const alreadyRead = message.readBy.some(r => r.user.toString() === req.user.id);
+      if (!alreadyRead) {
+        message.readBy.push({ user: req.user.id });
+        await message.save();
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -270,18 +294,14 @@ exports.markAsRead = async (req, res, next) => {
  */
 exports.deleteMessage = async (req, res, next) => {
   try {
-    const conversation = await Conversation.findOne({
-      'messages._id': req.params.messageId
-    });
+    const message = await Message.findById(req.params.messageId);
 
-    if (!conversation) {
+    if (!message) {
       return res.status(404).json({
         success: false,
         message: 'Message not found'
       });
     }
-
-    const message = conversation.messages.id(req.params.messageId);
 
     // Only sender or admin can delete
     if (message.sender.toString() !== req.user.id && req.user.role !== 'admin') {
@@ -291,8 +311,7 @@ exports.deleteMessage = async (req, res, next) => {
       });
     }
 
-    message.remove();
-    await conversation.save();
+    await message.deleteOne();
 
     res.status(200).json({
       success: true,

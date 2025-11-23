@@ -5,7 +5,8 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Avatar from '@/components/ui/Avatar';
 import apiClient from '@/utils/apiClient';
-import { FiSend, FiSearch, FiUser } from 'react-icons/fi';
+import { FiSend, FiSearch, FiUser, FiPlus, FiX } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
@@ -16,6 +17,11 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // New Chat Modal State
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [contacts, setContacts] = useState({ admins: [], mentors: [] });
+  const [loadingContacts, setLoadingContacts] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -29,7 +35,7 @@ export default function Messages() {
 
   const fetchConversations = async () => {
     try {
-      const response = await apiClient.get('/messages/conversations');
+      const response = await apiClient.get('/conversations');
       setConversations(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
@@ -41,11 +47,24 @@ export default function Messages() {
 
   const fetchMessages = async (conversationId) => {
     try {
-      const response = await apiClient.get(`/messages/conversation/${conversationId}`);
+      const response = await apiClient.get(`/conversations/${conversationId}/messages`);
       setMessages(response.data.data || []);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
       setMessages([]);
+    }
+  };
+
+  const fetchContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const response = await apiClient.get('/users/contacts');
+      setContacts(response.data.data);
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error);
+      toast.error('Failed to load contacts');
+    } finally {
+      setLoadingContacts(false);
     }
   };
 
@@ -54,14 +73,46 @@ export default function Messages() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      await apiClient.post('/messages', {
-        conversationId: selectedConversation._id,
+      await apiClient.post(`/conversations/${selectedConversation._id}/messages`, {
         content: newMessage,
       });
       setNewMessage('');
       fetchMessages(selectedConversation._id);
+      // Refresh conversations to update last message
+      fetchConversations();
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast.error('Failed to send message');
+    }
+  };
+
+  const handleStartChat = async (contactId) => {
+    try {
+      // Check if conversation already exists
+      const existing = conversations.find(c =>
+        c.participants.some(p => p._id === contactId)
+      );
+
+      if (existing) {
+        setSelectedConversation(existing);
+        fetchMessages(existing._id);
+        setShowNewChatModal(false);
+        return;
+      }
+
+      // Create new conversation
+      const response = await apiClient.post('/conversations', {
+        participants: [contactId]
+      });
+
+      const newConv = response.data.data;
+      setConversations([newConv, ...conversations]);
+      setSelectedConversation(newConv);
+      setMessages([]); // Empty for new chat
+      setShowNewChatModal(false);
+    } catch (error) {
+      console.error('Failed to start chat:', error);
+      toast.error('Failed to start conversation');
     }
   };
 
@@ -69,7 +120,7 @@ export default function Messages() {
     const otherUser = conv.participants?.find(p => p._id !== user?._id);
     const search = searchTerm.toLowerCase();
     return otherUser?.firstName?.toLowerCase().includes(search) ||
-           otherUser?.lastName?.toLowerCase().includes(search);
+      otherUser?.lastName?.toLowerCase().includes(search);
   });
 
   if (authLoading || loading) {
@@ -89,12 +140,24 @@ export default function Messages() {
       </Head>
 
       <DashboardLayout>
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden h-[calc(100vh-140px)]">
           <div className="grid grid-cols-1 md:grid-cols-3 h-full">
             {/* Conversations List */}
-            <div className="border-r border-gray-200 flex flex-col">
+            <div className={`border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
               <div className="p-3 border-b border-gray-200">
-                <h2 className="text-base font-bold text-gray-900 mb-2">Messages</h2>
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-lg font-bold text-gray-900">Messages</h2>
+                  <button
+                    onClick={() => {
+                      setShowNewChatModal(true);
+                      fetchContacts();
+                    }}
+                    className="p-2 bg-primary-50 text-primary-600 rounded-full hover:bg-primary-100 transition-colors"
+                    title="New Chat"
+                  >
+                    <FiPlus className="w-5 h-5" />
+                  </button>
+                </div>
                 <div className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -102,7 +165,7 @@ export default function Messages() {
                     placeholder="Search conversations..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
               </div>
@@ -118,17 +181,25 @@ export default function Messages() {
                           setSelectedConversation(conversation);
                           fetchMessages(conversation._id);
                         }}
-                        className={`w-full p-3 border-b border-gray-100 hover:bg-gray-50 text-left transition-colors ${
-                          selectedConversation?._id === conversation._id ? 'bg-primary-50' : ''
-                        }`}
+                        className={`w-full p-3 border-b border-gray-100 hover:bg-gray-50 text-left transition-colors ${selectedConversation?._id === conversation._id ? 'bg-primary-50' : ''
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <Avatar name={`${otherUser?.firstName} ${otherUser?.lastName}`} size="sm" />
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-gray-900 truncate">
-                              {otherUser?.firstName} {otherUser?.lastName}
-                            </h3>
-                            <p className="text-xs text-gray-500 truncate">{conversation.lastMessage?.content || 'No messages yet'}</p>
+                            <div className="flex justify-between items-baseline">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">
+                                {otherUser?.firstName} {otherUser?.lastName}
+                              </h3>
+                              {conversation.lastMessageAt && (
+                                <span className="text-xs text-gray-400">
+                                  {new Date(conversation.lastMessageAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">
+                              {conversation.lastMessage?.content || 'No messages yet'}
+                            </p>
                           </div>
                         </div>
                       </button>
@@ -136,18 +207,24 @@ export default function Messages() {
                   })
                 ) : (
                   <div className="p-6 text-center text-gray-500 text-sm">
-                    No conversations found
+                    No conversations found. Start a new chat!
                   </div>
                 )}
               </div>
             </div>
 
             {/* Messages Area */}
-            <div className="col-span-2 flex flex-col">
+            <div className={`col-span-2 flex flex-col ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
               {selectedConversation ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-3 border-b border-gray-200 flex items-center gap-3">
+                  <div className="p-3 border-b border-gray-200 flex items-center gap-3 bg-white">
+                    <button
+                      className="md:hidden mr-2 text-gray-500"
+                      onClick={() => setSelectedConversation(null)}
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
                     {(() => {
                       const otherUser = selectedConversation.participants?.find(p => p._id !== user?._id);
                       return (
@@ -157,7 +234,7 @@ export default function Messages() {
                             <h3 className="text-sm font-semibold text-gray-900">
                               {otherUser?.firstName} {otherUser?.lastName}
                             </h3>
-                            <p className="text-xs text-gray-500">{otherUser?.role}</p>
+                            <p className="text-xs text-gray-500 capitalize">{otherUser?.role}</p>
                           </div>
                         </>
                       );
@@ -165,55 +242,150 @@ export default function Messages() {
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                     {messages.map((message) => {
                       const isOwn = message.sender?._id === user?._id;
                       return (
                         <div key={message._id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                            isOwn ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'
-                          }`}>
-                            <p className="text-sm">{message.content}</p>
-                            <p className={`text-xs mt-1 ${isOwn ? 'text-primary-100' : 'text-gray-500'}`}>
-                              {new Date(message.createdAt).toLocaleTimeString()}
+                          <div className={`max-w-[80%] lg:max-w-[70%] px-4 py-2 rounded-2xl shadow-sm ${isOwn
+                              ? 'bg-primary-600 text-white rounded-tr-none'
+                              : 'bg-white text-gray-900 border border-gray-100 rounded-tl-none'
+                            }`}>
+                            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                            <p className={`text-[10px] mt-1 text-right ${isOwn ? 'text-primary-100' : 'text-gray-400'}`}>
+                              {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
                       );
                     })}
+                    {messages.length === 0 && (
+                      <div className="text-center text-gray-400 text-sm mt-10">
+                        Start the conversation by sending a message.
+                      </div>
+                    )}
                   </div>
 
                   {/* Message Input */}
-                  <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
+                  <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200">
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                       <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className="btn btn-primary px-4"
+                        className="p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        <FiSend className="w-4 h-4" />
+                        <FiSend className="w-5 h-5" />
                       </button>
                     </div>
                   </form>
                 </>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50">
                   <div className="text-center">
-                    <FiUser className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm">Select a conversation to start messaging</p>
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                      <FiUser className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900">Your Messages</h3>
+                    <p className="text-sm mt-1">Select a conversation or start a new chat</p>
+                    <button
+                      onClick={() => {
+                        setShowNewChatModal(true);
+                        fetchContacts();
+                      }}
+                      className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 transition-colors"
+                    >
+                      Start New Chat
+                    </button>
                   </div>
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* New Chat Modal */}
+        {showNewChatModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-900">New Chat</h3>
+                <button
+                  onClick={() => setShowNewChatModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FiX className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4">
+                {loadingContacts ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Admins Section */}
+                    {contacts.admins?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Support & Administration</h4>
+                        <div className="space-y-2">
+                          {contacts.admins.map(admin => (
+                            <button
+                              key={admin._id}
+                              onClick={() => handleStartChat(admin._id)}
+                              className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                            >
+                              <Avatar name={`${admin.firstName} ${admin.lastName}`} size="sm" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{admin.firstName} {admin.lastName}</p>
+                                <p className="text-xs text-gray-500">Administrator</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mentors Section */}
+                    {contacts.mentors?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Mentors</h4>
+                        <div className="space-y-2">
+                          {contacts.mentors.map(mentor => (
+                            <button
+                              key={mentor._id}
+                              onClick={() => handleStartChat(mentor._id)}
+                              className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                            >
+                              <Avatar name={`${mentor.firstName} ${mentor.lastName}`} size="sm" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{mentor.firstName} {mentor.lastName}</p>
+                                <p className="text-xs text-gray-500">Mentor</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {contacts.admins?.length === 0 && contacts.mentors?.length === 0 && (
+                      <div className="text-center text-gray-500 py-4">
+                        No contacts found.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </DashboardLayout>
     </>
   );

@@ -7,7 +7,8 @@ const {
   updateUser,
   deleteUser,
   uploadResume,
-  getInternProfile
+  getInternProfile,
+  getContacts
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/auth');
 const { upload, handleMulterError } = require('../middleware/upload');
@@ -16,6 +17,9 @@ const { upload, handleMulterError } = require('../middleware/upload');
 router.route('/')
   .get(protect, authorize('admin'), getUsers)
   .post(protect, authorize('admin'), createUser);
+
+// Contacts for messaging
+router.get('/contacts', protect, getContacts);
 
 router.route('/:id')
   .get(protect, getUser)
@@ -27,5 +31,7 @@ router.post('/:id/resume', protect, upload.single('resume'), handleMulterError, 
 
 // Intern profile
 router.get('/:id/profile', getInternProfile);
+
+
 
 module.exports = router;

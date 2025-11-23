@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import { FiMenu, FiX, FiHome, FiUsers, FiBookOpen, FiBarChart2, FiSettings, FiBell, FiClipboard, FiLogOut, FiFileText, FiAward } from 'react-icons/fi';
+import { FiMenu, FiX, FiHome, FiUsers, FiBookOpen, FiBarChart2, FiSettings, FiBell, FiClipboard, FiLogOut, FiFileText, FiAward, FiMessageSquare } from 'react-icons/fi';
 
 const nav = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: FiHome },
@@ -14,6 +14,7 @@ const nav = [
   { href: '/admin/submissions', label: 'Submissions', icon: FiFileText },
   { href: '/admin/certificates', label: 'Certificates', icon: FiAward },
   { href: '/admin/announcements', label: 'Announcements', icon: FiBell },
+  { href: '/admin/messages', label: 'Support Chat', icon: FiMessageSquare },
   { href: '/admin/analytics', label: 'Analytics', icon: FiBarChart2 },
   { href: '/admin/settings', label: 'Settings', icon: FiSettings },
 ];
