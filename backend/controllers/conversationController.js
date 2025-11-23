@@ -143,6 +143,11 @@ exports.sendMessage = async (req, res, next) => {
       content
     });
 
+    // Populate message with sender info and readBy details
+    const populatedMessage = await Message.findById(message._id)
+      .populate('sender', 'firstName lastName avatar _id')
+      .populate('readBy.user', 'firstName lastName avatar _id');
+
     // Update conversation last message (handled by post-save hook in model, but we can ensure it here too if needed)
     // The model hook does: await this.model('Conversation').findByIdAndUpdate(this.conversation, { lastMessage: this._id, lastMessageAt: this.createdAt });
 
@@ -157,7 +162,7 @@ exports.sendMessage = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: updatedConversation,
-      message: message // Also return the message created
+      message: populatedMessage
     });
   } catch (error) {
     next(error);

@@ -31,9 +31,33 @@ io.on('connection', (socket) => {
     console.log(`User joined conversation ${conversationId}`);
   });
 
-  // Handle new message
+  // Handle new message with proper persistence
   socket.on('send_message', (data) => {
-    io.to(`conversation_${data.conversationId}`).emit('new_message', data);
+    // Broadcast the message to all users in the conversation room
+    // The message data should already be populated from the API response
+    io.to(`conversation_${data.conversationId}`).emit('new_message', {
+      _id: data._id,
+      conversation: data.conversation || data.conversationId,
+      conversationId: data.conversationId,
+      sender: data.sender,
+      content: data.content,
+      attachments: data.attachments || [],
+      readBy: data.readBy || [],
+      isEdited: data.isEdited || false,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
+    });
+  });
+
+  // Handle message read status update
+  socket.on('mark_read', (data) => {
+    // data contains: conversationId, messageId, userId, readAt
+    io.to(`conversation_${data.conversationId}`).emit('message_read', {
+      conversationId: data.conversationId,
+      messageId: data.messageId,
+      userId: data.userId,
+      readAt: data.readAt || new Date().toISOString()
+    });
   });
 
   // Handle typing indicator
