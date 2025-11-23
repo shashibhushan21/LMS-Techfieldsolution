@@ -59,10 +59,16 @@ export default function DashboardLayout({ children }) {
         { href: '/mentor/submissions', icon: FiFileText, label: 'Submissions' },
         { href: '/mentor/students', icon: FiUsers, label: 'Students' },
         { href: '/dashboard/messages', icon: FiMessageSquare, label: 'Messages' },
+        { href: '/dashboard/notifications', icon: FiBell, label: 'Notifications' },
+        { href: '/dashboard/profile', icon: FiSettings, label: 'Settings' },
       ];
     }
 
-    return commonItems;
+    // Intern items (commonItems + Profile)
+    return [
+      ...commonItems,
+      { href: '/dashboard/profile', icon: FiSettings, label: 'Profile' }
+    ];
   };
 
   const navItems = getNavItems();
