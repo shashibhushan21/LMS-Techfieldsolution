@@ -60,19 +60,19 @@ export default function AssignmentCard({ assignment }) {
                   {dueDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              {assignment.totalPoints && (
+              {assignment.maxScore && (
                 <div className="flex items-center text-neutral-500">
                   <span className="w-1 h-1 rounded-full bg-neutral-300 mr-4" />
-                  <span>{assignment.totalPoints} pts</span>
+                  <span>{assignment.maxScore} pts</span>
                 </div>
               )}
             </div>
 
-            {assignment.grade ? (
+            {assignment.score !== undefined ? (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-neutral-500 uppercase font-medium tracking-wide">Score</span>
                 <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">
-                  {assignment.grade}/{assignment.totalPoints}
+                  {assignment.score}/{assignment.maxScore}
                 </span>
               </div>
             ) : (

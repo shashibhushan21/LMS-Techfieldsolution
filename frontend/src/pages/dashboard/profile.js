@@ -37,8 +37,6 @@ export default function InternProfile() {
                 router.push('/');
             } else if (user.role === 'admin') {
                 router.push('/admin/dashboard');
-            } else if (user.role === 'mentor') {
-                router.push('/mentor/dashboard');
             } else {
                 // Extract digits from stored phone (e.g., "+91 1234567890" -> "1234567890")
                 const phoneDigits = user.phone ? user.phone.replace(/\D/g, '').slice(-10) : '';

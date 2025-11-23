@@ -46,7 +46,7 @@ export default function MentorSubmissions() {
     };
     const badge = badges[status] || badges.submitted;
     const Icon = badge.icon;
-    
+
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
         <Icon className="w-3 h-3" />
@@ -84,11 +84,10 @@ export default function MentorSubmissions() {
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                    filter === f
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${filter === f
                       ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
@@ -122,7 +121,13 @@ export default function MentorSubmissions() {
                         </td>
                         <td className="px-4 py-2">{getStatusBadge(submission.status)}</td>
                         <td className="px-4 py-2 text-sm text-gray-900">
-                          {submission.grade !== undefined ? `${submission.grade}%` : '-'}
+                          {submission.score !== undefined ? (
+                            <span className="font-medium text-gray-900">
+                              {submission.score}/{submission.assignment?.maxScore || 100}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <button

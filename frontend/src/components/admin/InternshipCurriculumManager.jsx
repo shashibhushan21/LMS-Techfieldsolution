@@ -3,16 +3,16 @@ import ModuleForm from '@/components/admin/ModuleForm';
 import AssignmentForm from '@/components/admin/AssignmentForm';
 import Avatar from '@/components/ui/Avatar';
 import apiClient from '@/utils/apiClient';
-import { 
-  FiUsers, FiFileText, FiBook, FiPlus, FiEdit2, FiTrash2, 
+import {
+  FiUsers, FiFileText, FiBook, FiPlus, FiEdit2, FiTrash2,
   FiCheckCircle, FiClock, FiX, FiChevronDown, FiChevronUp,
   FiTrendingUp
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
 
-export default function InternshipCurriculumManager({ 
-  internshipId, 
+export default function InternshipCurriculumManager({
+  internshipId,
   role = 'admin', // 'admin' or 'mentor'
   canEdit = true,
   onDataUpdate,
@@ -42,7 +42,7 @@ export default function InternshipCurriculumManager({
     // Group assignments by module
     const modules = responseData.modules || [];
     const assignments = responseData.assignments || [];
-    
+
     // Attach assignments to their respective modules
     const modulesWithAssignments = modules.map(module => ({
       ...module,
@@ -76,10 +76,10 @@ export default function InternshipCurriculumManager({
 
   const fetchInternshipData = async () => {
     try {
-      const endpoint = role === 'mentor' 
+      const endpoint = role === 'mentor'
         ? `/mentors/internships/${internshipId}`
         : `/internships/${internshipId}`;
-      
+
       const response = await apiClient.get(endpoint);
       const responseData = response.data.data;
 
@@ -153,7 +153,7 @@ export default function InternshipCurriculumManager({
   const handleDeleteModule = async (moduleId) => {
     if (!canEdit) return;
     if (!confirm('Are you sure you want to delete this module? All assignments within it will also be deleted.')) return;
-    
+
     try {
       await apiClient.delete(`/modules/${moduleId}`);
       toast.success('Module deleted successfully');
@@ -166,7 +166,7 @@ export default function InternshipCurriculumManager({
 
   const handlePublishModule = async (moduleId, currentStatus) => {
     if (!canEdit) return;
-    
+
     try {
       await apiClient.patch(`/modules/${moduleId}/publish`, {
         isPublished: !currentStatus
@@ -198,7 +198,7 @@ export default function InternshipCurriculumManager({
   const handleDeleteAssignment = async (assignmentId) => {
     if (!canEdit) return;
     if (!confirm('Are you sure you want to delete this assignment?')) return;
-    
+
     try {
       await apiClient.delete(`/assignments/${assignmentId}`);
       toast.success('Assignment deleted successfully');
@@ -264,19 +264,19 @@ export default function InternshipCurriculumManager({
   const { internship, modules = [], assignments = [], enrollments = [], stats = {} } = data;
 
   // Define tabs based on role
-  const tabs = role === 'mentor' 
+  const tabs = role === 'mentor'
     ? [
-        { id: 'overview', label: 'Overview', icon: FiBook },
-        { id: 'curriculum', label: 'Curriculum', icon: FiFileText },
-        { id: 'assignments', label: 'Assignments', icon: FiFileText },
-        { id: 'interns', label: 'Interns', icon: FiUsers }
-      ]
+      { id: 'overview', label: 'Overview', icon: FiBook },
+      { id: 'curriculum', label: 'Curriculum', icon: FiFileText },
+      { id: 'assignments', label: 'Assignments', icon: FiFileText },
+      { id: 'interns', label: 'Interns', icon: FiUsers }
+    ]
     : [
-        { id: 'overview', label: 'Overview', icon: FiBook },
-        { id: 'curriculum', label: 'Curriculum', icon: FiFileText },
-        { id: 'assignments', label: 'Assignments', icon: FiFileText },
-        { id: 'enrollments', label: 'Enrollments', icon: FiUsers }
-      ];
+      { id: 'overview', label: 'Overview', icon: FiBook },
+      { id: 'curriculum', label: 'Curriculum', icon: FiFileText },
+      { id: 'assignments', label: 'Assignments', icon: FiFileText },
+      { id: 'enrollments', label: 'Enrollments', icon: FiUsers }
+    ];
 
   return (
     <div className="space-y-6">
@@ -329,11 +329,10 @@ export default function InternshipCurriculumManager({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
                       ? 'text-primary-600 border-b-2 border-primary-600'
                       : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -366,12 +365,11 @@ export default function InternshipCurriculumManager({
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Status</p>
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      internship.status === 'open' ? 'bg-green-100 text-green-800' :
-                      internship.status === 'closed' ? 'bg-red-100 text-red-800' :
-                      internship.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${internship.status === 'open' ? 'bg-green-100 text-green-800' :
+                        internship.status === 'closed' ? 'bg-red-100 text-red-800' :
+                          internship.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                      }`}>
                       {internship.status ? internship.status.charAt(0).toUpperCase() + internship.status.slice(1) : 'Draft'}
                     </span>
                   </div>
@@ -556,7 +554,7 @@ export default function InternshipCurriculumManager({
                           <h4 className="font-semibold text-gray-900">{assignment.title}</h4>
                           <p className="text-sm text-gray-600 mt-1">{assignment.description}</p>
                           <div className="mt-3 flex gap-4 text-xs text-gray-500">
-                            <span>Points: {assignment.totalPoints}</span>
+                            <span>Points: {assignment.maxScore}</span>
                             {assignment.dueDate && (
                               <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
                             )}
@@ -620,7 +618,7 @@ export default function InternshipCurriculumManager({
                         <tr key={enrollment._id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <Avatar 
+                              <Avatar
                                 name={`${enrollment.user?.firstName} ${enrollment.user?.lastName}`}
                                 src={enrollment.user?.avatar}
                                 size="sm"
@@ -639,7 +637,7 @@ export default function InternshipCurriculumManager({
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[100px]">
-                                <div 
+                                <div
                                   className="bg-primary-600 h-2 rounded-full"
                                   style={{ width: `${enrollment.progressPercentage || 0}%` }}
                                 />
@@ -648,11 +646,10 @@ export default function InternshipCurriculumManager({
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
-                              enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                              }`}>
                               {enrollment.status}
                             </span>
                           </td>
@@ -662,7 +659,7 @@ export default function InternshipCurriculumManager({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  const route = role === 'mentor' 
+                                  const route = role === 'mentor'
                                     ? `/mentor/students/${enrollment.user._id}`
                                     : `/admin/users/${enrollment.user._id}`;
                                   router.push(route);

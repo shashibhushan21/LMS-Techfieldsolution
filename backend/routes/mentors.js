@@ -94,12 +94,15 @@ router.get('/students', protect, authorize('mentor'), async (req, res, next) => 
           assignment: { $in: assignmentIds },
           status: 'graded',
           score: { $exists: true, $ne: null }
-        }).select('score totalPoints');
+        })
+          .select('score assignment')
+          .populate('assignment', 'maxScore');
 
         let averageScore = 0;
         if (gradedSubmissions.length > 0) {
           const totalPercentage = gradedSubmissions.reduce((sum, sub) => {
-            const percentage = sub.totalPoints > 0 ? (sub.score / sub.totalPoints) * 100 : 0;
+            const maxScore = sub.assignment?.maxScore || 100;
+            const percentage = maxScore > 0 ? (sub.score / maxScore) * 100 : 0;
             return sum + percentage;
           }, 0);
           averageScore = Math.round(totalPercentage / gradedSubmissions.length);
@@ -144,7 +147,7 @@ router.get('/students', protect, authorize('mentor'), async (req, res, next) => 
 router.get('/students/:id', protect, authorize('mentor'), async (req, res, next) => {
   try {
     const student = await User.findById(req.params.id).select('-password');
-    
+
     if (!student) {
       return res.status(404).json({
         success: false,
@@ -167,12 +170,35 @@ router.get('/students/:id', protect, authorize('mentor'), async (req, res, next)
     }
 
     // Get student's enrollments in mentor's internships
-    const enrollments = await Enrollment.find({
+    let enrollments = await Enrollment.find({
       user: req.params.id,
       internship: { $in: myInternships }
     })
       .populate('internship', 'title domain')
       .lean();
+
+    // Calculate dynamic progress for each enrollment
+    enrollments = await Promise.all(enrollments.map(async (enrollment) => {
+      if (!enrollment.internship) return enrollment;
+
+      const totalAssignments = await Assignment.countDocuments({
+        internship: enrollment.internship._id
+      });
+
+      const submittedAssignments = await Submission.countDocuments({
+        user: req.params.id,
+        assignment: { $in: await Assignment.find({ internship: enrollment.internship._id }).distinct('_id') }
+      });
+
+      const progressPercentage = totalAssignments > 0
+        ? Math.round((submittedAssignments / totalAssignments) * 100)
+        : 0;
+
+      return {
+        ...enrollment,
+        progressPercentage
+      };
+    }));
 
     // Get submissions
     const assignmentIds = await Assignment.find({
@@ -183,7 +209,7 @@ router.get('/students/:id', protect, authorize('mentor'), async (req, res, next)
       user: req.params.id,
       assignment: { $in: assignmentIds }
     })
-      .populate('assignment', 'title totalPoints')
+      .populate('assignment', 'title maxScore')
       .sort({ submittedAt: -1 })
       .limit(10)
       .lean();
@@ -220,7 +246,7 @@ router.get('/submissions', protect, authorize('mentor'), async (req, res, next) 
 
     // Build query
     const query = { assignment: { $in: assignmentIds } };
-    
+
     if (status && status !== 'all') {
       if (status === 'pending') {
         query.status = 'submitted';
@@ -231,7 +257,7 @@ router.get('/submissions', protect, authorize('mentor'), async (req, res, next) 
 
     const submissions = await Submission.find(query)
       .populate('user', 'firstName lastName email avatar')
-      .populate('assignment', 'title totalPoints dueDate')
+      .populate('assignment', 'title maxScore dueDate')
       .populate({
         path: 'assignment',
         populate: { path: 'internship', select: 'title' }
@@ -258,7 +284,7 @@ router.get('/submissions/:id', protect, authorize('mentor'), async (req, res, ne
   try {
     const submission = await Submission.findById(req.params.id)
       .populate('user', 'firstName lastName email avatar')
-      .populate('assignment', 'title description totalPoints dueDate internship')
+      .populate('assignment', 'title description maxScore dueDate internship')
       .populate({
         path: 'assignment',
         populate: { path: 'internship', select: 'title mentor' }
@@ -359,7 +385,7 @@ router.get('/dashboard', protect, authorize('mentor'), async (req, res, next) =>
       status: 'graded'
     })
       .populate('user', 'firstName lastName')
-      .populate('assignment', 'title totalPoints')
+      .populate('assignment', 'title maxScore')
       .sort({ gradedAt: -1 })
       .limit(5)
       .lean();

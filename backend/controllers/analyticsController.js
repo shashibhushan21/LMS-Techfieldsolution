@@ -187,11 +187,17 @@ exports.getInternDashboard = async (req, res, next) => {
       user: req.user.id,
       status: 'graded',
       score: { $exists: true }
-    });
+    }).populate('assignment', 'maxScore');
 
-    const averageScore = submissions.length > 0
-      ? submissions.reduce((sum, s) => sum + s.score, 0) / submissions.length
-      : 0;
+    let averageScore = 0;
+    if (submissions.length > 0) {
+      const totalPercentage = submissions.reduce((sum, sub) => {
+        const maxScore = sub.assignment?.maxScore || 100;
+        const percentage = maxScore > 0 ? (sub.score / maxScore) * 100 : 0;
+        return sum + percentage;
+      }, 0);
+      averageScore = totalPercentage / submissions.length;
+    }
 
     // Progress by enrollment
     const progressPromises = enrollments.map(async (enrollment) => {
@@ -240,6 +246,8 @@ exports.getInternDashboard = async (req, res, next) => {
 
         return {
           ...assignment,
+          status: submission ? submission.status : 'pending',
+          score: submission ? submission.score : undefined,
           submission: submission || null
         };
       })

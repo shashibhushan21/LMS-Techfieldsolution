@@ -5,8 +5,8 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Avatar from '@/components/ui/Avatar';
 import apiClient from '@/utils/apiClient';
-import { 
-  FiUser, FiMail, FiCalendar, FiBook, FiFileText, 
+import {
+  FiUser, FiMail, FiCalendar, FiBook, FiFileText,
   FiCheckCircle, FiClock, FiAward, FiMessageSquare,
   FiTrendingUp, FiActivity
 } from 'react-icons/fi';
@@ -15,7 +15,7 @@ export default function StudentDetail() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
-  
+
   const [student, setStudent] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -38,23 +38,17 @@ export default function StudentDetail() {
   const fetchStudentData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch student profile
-      const studentResponse = await apiClient.get(`/users/${id}`);
-      setStudent(studentResponse.data.data);
 
-      // Fetch student enrollments
-      const enrollmentResponse = await apiClient.get(`/enrollments/user/${id}`);
-      const enrollmentsData = enrollmentResponse.data.data || [];
-      setEnrollments(enrollmentsData);
+      // Fetch all student data from mentor endpoint
+      const response = await apiClient.get(`/mentors/students/${id}`);
+      const { student, enrollments, submissions } = response.data.data;
 
-      // Fetch student submissions
-      const submissionsResponse = await apiClient.get(`/submissions?user=${id}`);
-      const submissionsData = submissionsResponse.data.data || [];
-      setSubmissions(submissionsData);
+      setStudent(student);
+      setEnrollments(enrollments || []);
+      setSubmissions(submissions || []);
 
       // Calculate stats
-      calculateStats(enrollmentsData, submissionsData);
+      calculateStats(enrollments || [], submissions || []);
     } catch (error) {
       console.error('Failed to fetch student data:', error);
       if (error.response?.status === 403 || error.response?.status === 404) {
@@ -69,10 +63,10 @@ export default function StudentDetail() {
     const totalEnrollments = enrollments.length;
     const activeEnrollments = enrollments.filter(e => e.status === 'active').length;
     const completedEnrollments = enrollments.filter(e => e.status === 'completed').length;
-    
+
     const totalSubmissions = submissions.length;
     const gradedSubmissions = submissions.filter(s => s.status === 'graded' && s.score !== null).length;
-    
+
     // Calculate average score properly - submissions have 'score' field and assignment has 'maxScore'
     let averageScore = 0;
     if (gradedSubmissions > 0) {
@@ -144,7 +138,7 @@ export default function StudentDetail() {
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <Avatar 
+                <Avatar
                   name={`${student.firstName} ${student.lastName}`}
                   src={student.avatar}
                   size="2xl"
@@ -252,11 +246,10 @@ export default function StudentDetail() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
-                        activeTab === tab.id
+                      className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
                           ? 'text-primary-600 border-b-2 border-primary-600'
                           : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       {tab.label}
@@ -316,12 +309,12 @@ export default function StudentDetail() {
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-primary-600 h-2 rounded-full"
-                              style={{ 
-                                width: `${stats?.totalEnrollments > 0 
-                                  ? (stats.activeEnrollments / stats.totalEnrollments) * 100 
-                                  : 0}%` 
+                              style={{
+                                width: `${stats?.totalEnrollments > 0
+                                  ? (stats.activeEnrollments / stats.totalEnrollments) * 100
+                                  : 0}%`
                               }}
                             />
                           </div>
@@ -335,12 +328,12 @@ export default function StudentDetail() {
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-green-600 h-2 rounded-full"
-                              style={{ 
-                                width: `${stats?.totalSubmissions > 0 
-                                  ? (stats.gradedSubmissions / stats.totalSubmissions) * 100 
-                                  : 0}%` 
+                              style={{
+                                width: `${stats?.totalSubmissions > 0
+                                  ? (stats.gradedSubmissions / stats.totalSubmissions) * 100
+                                  : 0}%`
                               }}
                             />
                           </div>
@@ -352,7 +345,7 @@ export default function StudentDetail() {
                             <span className="font-medium text-gray-900">{stats?.averageScore}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-blue-600 h-2 rounded-full"
                               style={{ width: `${stats?.averageScore || 0}%` }}
                             />
@@ -371,7 +364,7 @@ export default function StudentDetail() {
                   {enrollments.length > 0 ? (
                     <div className="grid gap-4">
                       {enrollments.map((enrollment) => (
-                        <div 
+                        <div
                           key={enrollment._id}
                           className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
                         >
@@ -387,11 +380,10 @@ export default function StudentDetail() {
                                 <span className="text-gray-500">
                                   Enrolled: {new Date(enrollment.createdAt).toLocaleDateString()}
                                 </span>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
-                                  enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                    enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-800'
+                                  }`}>
                                   {enrollment.status}
                                 </span>
                               </div>
@@ -400,7 +392,7 @@ export default function StudentDetail() {
                               <div className="text-sm text-gray-600 mb-1">Progress</div>
                               <div className="flex items-center gap-2">
                                 <div className="w-24 bg-gray-200 rounded-full h-2">
-                                  <div 
+                                  <div
                                     className="bg-primary-600 h-2 rounded-full"
                                     style={{ width: `${enrollment.progressPercentage || 0}%` }}
                                   />

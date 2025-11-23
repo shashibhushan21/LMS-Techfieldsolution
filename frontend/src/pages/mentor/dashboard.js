@@ -203,7 +203,7 @@ export default function MentorDashboard() {
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-green-600">
-                            {submission.score}/{submission.assignment?.totalPoints}
+                            {submission.score}/{submission.assignment?.maxScore}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(submission.gradedAt).toLocaleDateString()}

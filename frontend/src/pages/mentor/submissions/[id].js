@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Avatar from '@/components/ui/Avatar';
 import apiClient from '@/utils/apiClient';
-import { 
+import {
   FiFileText, FiUser, FiCalendar, FiClock, FiDownload,
   FiCheckCircle, FiXCircle, FiAlertCircle, FiExternalLink,
   FiSave, FiSend
@@ -16,7 +16,7 @@ export default function SubmissionGrading() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
-  
+
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
@@ -41,9 +41,9 @@ export default function SubmissionGrading() {
     try {
       setLoading(true);
       const response = await apiClient.get(`/mentors/submissions/${id}`);
-      const submissionData = response.data.data.submission;
+      const submissionData = response.data.data;
       setSubmission(submissionData);
-      
+
       // Pre-fill form if already graded
       if (submissionData.status === 'graded') {
         setFormData({
@@ -129,8 +129,8 @@ export default function SubmissionGrading() {
 
   const statusInfo = getStatusBadge(submission.status);
   const StatusIcon = statusInfo.icon;
-  const isLate = submission.assignment?.dueDate && 
-    submission.submittedAt && 
+  const isLate = submission.assignment?.dueDate &&
+    submission.submittedAt &&
     new Date(submission.submittedAt) > new Date(submission.assignment.dueDate);
 
   return (
@@ -180,7 +180,7 @@ export default function SubmissionGrading() {
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Student Information</h3>
                 <div className="flex items-center gap-4">
-                  <Avatar 
+                  <Avatar
                     name={`${submission.user?.firstName} ${submission.user?.lastName}`}
                     src={submission.user?.avatar}
                     size="lg"
@@ -203,64 +203,88 @@ export default function SubmissionGrading() {
               {/* Submission Details */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Submission Details</h3>
-                
+
                 <div className="space-y-4">
                   {/* Submission Text */}
-                  {submission.submissionText && (
+                  {submission.content && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Response:</h4>
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <p className="text-gray-900 whitespace-pre-wrap">{submission.submissionText}</p>
+                        <p className="text-gray-900 whitespace-pre-wrap">{submission.content}</p>
                       </div>
                     </div>
                   )}
 
                   {/* File Attachments */}
-                  {submission.fileUrl && (
+                  {submission.files && submission.files.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Attachments:</h4>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <FiFileText className="w-8 h-8 text-gray-400" />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">Submission File</p>
-                          <p className="text-sm text-gray-500">
-                            {submission.fileName || 'Download attachment'}
-                          </p>
-                        </div>
-                        <a
-                          href={submission.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-sm btn-secondary inline-flex items-center gap-2"
-                        >
-                          <FiDownload className="w-4 h-4" />
-                          Download
-                        </a>
-                        <a
-                          href={submission.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-sm btn-secondary inline-flex items-center gap-2"
-                        >
-                          <FiExternalLink className="w-4 h-4" />
-                          Open
-                        </a>
+                      <div className="space-y-2">
+                        {submission.files.map((file, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <FiFileText className="w-8 h-8 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">Submission File {index + 1}</p>
+                              <p className="text-sm text-gray-500">
+                                {file.originalName || file.fileName || 'Download attachment'}
+                              </p>
+                            </div>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-secondary inline-flex items-center gap-2"
+                            >
+                              <FiDownload className="w-4 h-4" />
+                              Download
+                            </a>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-secondary inline-flex items-center gap-2"
+                            >
+                              <FiExternalLink className="w-4 h-4" />
+                              Open
+                            </a>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Link Submission */}
-                  {submission.submissionLink && (
+                  {/* Link Submissions */}
+                  {(submission.repositoryLink || submission.liveLink) && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Submission Link:</h4>
-                      <a
-                        href={submission.submissionLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-700 hover:underline break-all"
-                      >
-                        {submission.submissionLink}
-                      </a>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Submission Links:</h4>
+                      <div className="space-y-2">
+                        {submission.repositoryLink && (
+                          <div>
+                            <span className="text-xs text-gray-500 uppercase font-semibold">Repository:</span>
+                            <a
+                              href={submission.repositoryLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-primary-600 hover:text-primary-700 hover:underline break-all"
+                            >
+                              {submission.repositoryLink}
+                            </a>
+                          </div>
+                        )}
+                        {submission.liveLink && (
+                          <div>
+                            <span className="text-xs text-gray-500 uppercase font-semibold">Live Demo:</span>
+                            <a
+                              href={submission.liveLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-primary-600 hover:text-primary-700 hover:underline break-all"
+                            >
+                              {submission.liveLink}
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -276,13 +300,13 @@ export default function SubmissionGrading() {
                   <p className="text-green-800 whitespace-pre-wrap">{submission.feedback}</p>
                   <div className="mt-4 pt-4 border-t border-green-200">
                     <p className="text-sm text-green-700">
-                      Graded on: {new Date(submission.gradedAt).toLocaleDateString('en-US', {
+                      Graded on: {submission.gradedAt ? new Date(submission.gradedAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                      })}
+                      }) : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -297,7 +321,7 @@ export default function SubmissionGrading() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-600">Total Points</p>
-                    <p className="text-2xl font-bold text-gray-900">{submission.totalPoints}</p>
+                    <p className="text-2xl font-bold text-gray-900">{submission.assignment?.maxScore}</p>
                   </div>
                   {submission.assignment?.dueDate && (
                     <div>
@@ -331,7 +355,7 @@ export default function SubmissionGrading() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   {submission.status === 'graded' ? 'Update Grade' : 'Grade Submission'}
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

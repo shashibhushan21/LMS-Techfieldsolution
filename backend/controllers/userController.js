@@ -309,6 +309,27 @@ exports.getContacts = async (req, res, next) => {
 
       interns = await User.find({ role: 'intern' })
         .select('firstName lastName avatar role email');
+
+    } else if (req.user.role === 'mentor') {
+      // Mentors see their enrolled interns
+      const Internship = require('../models/Internship');
+      const myInternships = await Internship.find({ mentor: req.user.id }).distinct('_id');
+
+      const enrollments = await Enrollment.find({
+        internship: { $in: myInternships },
+        status: { $in: ['active', 'completed'] }
+      }).populate('user', 'firstName lastName avatar role email');
+
+      // Extract unique interns
+      const internMap = new Map();
+      enrollments.forEach(enrollment => {
+        if (enrollment.user) {
+          if (!internMap.has(enrollment.user._id.toString())) {
+            internMap.set(enrollment.user._id.toString(), enrollment.user);
+          }
+        }
+      });
+      interns = Array.from(internMap.values());
     }
 
     res.status(200).json({
