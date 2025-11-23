@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const {
   register,
   login,
@@ -13,6 +14,16 @@ const {
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const validate = require('../middleware/validate');
+
+// Auth-specific rate limiter - More lenient than global
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'development' ? 1000 : 20, // 1000 in dev, 20 in production
+  message: 'Too many login attempts from this IP, please try again after 15 minutes.',
+  skipSuccessfulRequests: true, // Don't count successful logins
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Validation rules
 const registerValidation = [
@@ -29,11 +40,11 @@ const loginValidation = [
 ];
 
 // Routes
-router.post('/register', registerValidation, validate, register);
-router.post('/login', loginValidation, validate, login);
+router.post('/register', authLimiter, registerValidation, validate, register);
+router.post('/login', authLimiter, loginValidation, validate, login);
 router.get('/me', protect, getMe);
 router.post('/logout', protect, logout);
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', authLimiter, forgotPassword);
 router.put('/reset-password/:token', resetPassword);
 router.put('/update-profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);

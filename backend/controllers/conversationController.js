@@ -270,16 +270,37 @@ exports.markAsRead = async (req, res, next) => {
     }
 
     // Check if user is allowed to mark as read (must be in conversation)
-    // For simplicity, we assume if they can access the message ID, they can read it, 
-    // or we should check conversation participants.
-    // Let's check conversation participants:
     const conversation = await Conversation.findById(message.conversation);
-    if (conversation && conversation.participants.includes(req.user.id)) {
-      // Add user to readBy array if not already there
-      const alreadyRead = message.readBy.some(r => r.user.toString() === req.user.id);
-      if (!alreadyRead) {
-        message.readBy.push({ user: req.user.id });
-        await message.save();
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Conversation not found'
+      });
+    }
+
+    const isParticipant = conversation.participants.some(p => p.toString() === req.user.id);
+    if (!isParticipant && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized'
+      });
+    }
+
+    // Add user to readBy array if not already there
+    const alreadyRead = message.readBy.some(r => r.user.toString() === req.user.id);
+    if (!alreadyRead) {
+      message.readBy.push({ user: req.user.id, readAt: new Date() });
+      await message.save();
+
+      // Emit socket event to notify all participants in the conversation
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`conversation_${conversation._id.toString()}`).emit('message_read', {
+          conversationId: conversation._id.toString(),
+          messageId: message._id.toString(),
+          userId: req.user.id,
+          readAt: new Date().toISOString()
+        });
       }
     }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -66,57 +66,22 @@ export default function AdminMessages() {
         }
     }, [messages, selectedConversation]);
 
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleNewMessage = (message) => {
-            console.log('Received new_message event:', message);
-            // Check both message.conversation and message.conversationId for compatibility
-            const msgConvId = message.conversation || message.conversationId;
-
-            if (selectedConversation && msgConvId === selectedConversation._id) {
-                setMessages((prev) => {
-                    // Avoid duplicates
-                    if (prev.some(m => m._id === message._id)) return prev;
-                    return [...prev, message];
+    // Define markMessageAsRead before it's used in other hooks
+    const markMessageAsRead = useCallback(async (messageId) => {
+        try {
+            await apiClient.put(`/conversations/messages/${messageId}/read`);
+            // Emit socket event to notify sender
+            if (socket && selectedConversation) {
+                socket.emit('mark_read', {
+                    conversationId: selectedConversation._id,
+                    messageId: messageId,
+                    userId: user?._id || user?.id,
+                    readAt: new Date().toISOString()
                 });
-
-                // Mark as read if received from another user
-                if (message.sender?._id !== user?._id) {
-                    markMessageAsRead(message._id);
-                }
             }
-            // Always refresh conversation list to update last message
-            fetchConversations();
-        };
-
-        const handleMessageRead = (data) => {
-            console.log('Received message_read event:', data);
-            if (selectedConversation && data.conversationId === selectedConversation._id) {
-                setMessages(prev => prev.map(m => {
-                    // If specific messageId provided, only update that message
-                    if (data.messageId && m._id !== data.messageId) return m;
-
-                    // Check if already marked as read by this user
-                    const alreadyRead = m.readBy?.some(r => r.user === data.userId);
-                    if (!alreadyRead) {
-                        return {
-                            ...m,
-                            readBy: [...(m.readBy || []), { user: data.userId, readAt: new Date() }]
-                        };
-                    }
-                    return m;
-                }));
-            }
-        };
-
-        socket.on('new_message', handleNewMessage);
-        socket.on('message_read', handleMessageRead);
-
-        return () => {
-            socket.off('new_message', handleNewMessage);
-            socket.off('message_read', handleMessageRead);
-        };
+        } catch (error) {
+            console.error('Failed to mark message as read:', error);
+        }
     }, [socket, selectedConversation, user]);
 
     const fetchConversations = async () => {
@@ -133,12 +98,89 @@ export default function AdminMessages() {
     const fetchMessages = async (conversationId) => {
         try {
             const response = await apiClient.get(`/conversations/${conversationId}/messages`);
-            setMessages(response.data.data || []);
+            const fetchedMessages = response.data.data || [];
+            setMessages(fetchedMessages);
             if (socket) socket.emit('join_conversation', conversationId);
+            
+            // Mark unread messages as read
+            const currentUserId = user?._id || user?.id;
+            fetchedMessages.forEach(msg => {
+                const senderIds = msg.sender?._id || msg.sender?.id || msg.sender;
+                if (senderIds !== currentUserId && !msg.readBy?.some(r => r.user === currentUserId)) {
+                    markMessageAsRead(msg._id);
+                }
+            });
         } catch (error) {
             console.error('Failed to fetch messages:', error);
         }
     };
+
+    useEffect(() => {
+        if (!socket) {
+            console.log('Socket not available yet');
+            return;
+        }
+
+        console.log('Setting up socket listeners...');
+
+        const handleNewMessage = (message) => {
+            console.log('Received new_message event:', message);
+            const msgConvId = message.conversation || message.conversationId;
+
+            setMessages((prev) => {
+                if (selectedConversation && msgConvId === selectedConversation._id) {
+                    if (prev.some(m => m._id === message._id)) {
+                        console.log('Duplicate message, skipping');
+                        return prev;
+                    }
+                    console.log('Adding new message to state');
+                    return [...prev, message];
+                }
+                return prev;
+            });
+
+            if (selectedConversation && msgConvId === selectedConversation._id) {
+                const currentUserId = user?._id || user?.id;
+                const messageSenderId = message.sender?._id || message.sender?.id || message.sender;
+                if (messageSenderId !== currentUserId) {
+                    setTimeout(() => markMessageAsRead(message._id), 100);
+                }
+            }
+            
+            fetchConversations();
+        };
+
+        const handleMessageRead = (data) => {
+            console.log('Received message_read event:', data);
+            setMessages(prev => {
+                if (selectedConversation && data.conversationId === selectedConversation._id) {
+                    return prev.map(m => {
+                        if (data.messageId && m._id !== data.messageId) return m;
+                        const alreadyRead = m.readBy?.some(r => r.user === data.userId);
+                        if (!alreadyRead) {
+                            return {
+                                ...m,
+                                readBy: [...(m.readBy || []), { user: data.userId, readAt: new Date() }]
+                            };
+                        }
+                        return m;
+                    });
+                }
+                return prev;
+            });
+        };
+
+        socket.on('new_message', handleNewMessage);
+        socket.on('message_read', handleMessageRead);
+
+        console.log('Socket listeners registered');
+
+        return () => {
+            console.log('Cleaning up socket listeners');
+            socket.off('new_message', handleNewMessage);
+            socket.off('message_read', handleMessageRead);
+        };
+    }, [socket, selectedConversation, markMessageAsRead, user]);
 
     const fetchContacts = async () => {
         setLoadingContacts(true);
@@ -173,7 +215,8 @@ export default function AdminMessages() {
                     conversationId: selectedConversation._id,
                     conversation: selectedConversation._id, // Add both for compatibility
                     sender: {
-                        _id: user._id,
+                        _id: user._id || user.id,
+                        id: user.id || user._id,
                         firstName: user.firstName,
                         lastName: user.lastName,
                         avatar: user.avatar
@@ -188,13 +231,16 @@ export default function AdminMessages() {
                 return [...prev, {
                     ...sentMessage,
                     sender: {
-                        _id: user._id,
+                        _id: user._id || user.id,
+                        id: user.id || user._id,
                         firstName: user.firstName,
                         lastName: user.lastName,
                         avatar: user.avatar
                     }
                 }];
             });
+
+            console.log('Message sent - User ID:', user._id || user.id, 'Sender ID in message:', sentMessage.sender);
 
             fetchConversations();
         } catch (error) {
@@ -243,9 +289,11 @@ export default function AdminMessages() {
     };
 
     const getMessageStatus = (message) => {
-        if (message.sender._id !== user._id) return null;
-        const otherParticipants = selectedConversation?.participants.filter(p => p._id !== user._id);
-        const isRead = otherParticipants?.every(p => message.readBy?.some(r => r.user === p._id));
+        const currentUserId = user?._id || user?.id;
+        const messageSenderId = message.sender?._id || message.sender?.id || message.sender;
+        if (messageSenderId !== currentUserId) return null;
+        const otherParticipants = selectedConversation?.participants.filter(p => (p._id || p.id) !== currentUserId);
+        const isRead = otherParticipants?.every(p => message.readBy?.some(r => (r.user === p._id || r.user === p.id)));
         return isRead ? (
             <div className="flex items-center gap-0.5">
                 <FiCheck className="w-3.5 h-3.5 text-blue-500" strokeWidth={3} />
@@ -418,7 +466,10 @@ export default function AdminMessages() {
                                     {/* Messages List */}
                                     <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-4" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                                         {messages.map((msg, i) => {
-                                            const isOwn = msg.sender?._id === user?._id;
+                                            // Check both _id and id for compatibility
+                                            const currentUserId = user?._id || user?.id;
+                                            const messageSenderId = msg.sender?._id || msg.sender?.id || msg.sender;
+                                            const isOwn = messageSenderId === currentUserId;
                                             const showDate = i === 0 || new Date(messages[i - 1].createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
                                             return (
                                                 <div key={msg._id}>

@@ -33,11 +33,18 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(xss());
 
-// Rate limiting
+// Rate limiting - More lenient in development
 const limiter = rateLimit({
-  windowMs: (process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000,
-  max: process.env.RATE_LIMIT_MAX_REQUESTS || 100,
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: (process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'development' ? 1000 : (process.env.RATE_LIMIT_MAX_REQUESTS || 100),
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skipSuccessfulRequests: false, // Don't count successful requests
+  skip: (req) => {
+    // Skip rate limiting for health check in development
+    return process.env.NODE_ENV === 'development' && req.path === '/health';
+  }
 });
 app.use('/api/', limiter);
 

@@ -51,6 +51,7 @@ io.on('connection', (socket) => {
 
   // Handle message read status update
   socket.on('mark_read', (data) => {
+    console.log('Received mark_read event:', data);
     // data contains: conversationId, messageId, userId, readAt
     io.to(`conversation_${data.conversationId}`).emit('message_read', {
       conversationId: data.conversationId,

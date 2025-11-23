@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import socketService from '@/services/socketService';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
@@ -14,19 +14,21 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // Initialize socket connection
-      const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
-
-      newSocket.on('connect', () => {
-        console.log('Socket connected');
-        newSocket.emit('join', user._id);
-      });
-
-      setSocket(newSocket);
+      // Connect using socketService
+      const userId = user._id || user.id;
+      const socketInstance = socketService.connect(userId);
+      setSocket(socketInstance);
 
       return () => {
-        newSocket.disconnect();
+        // Cleanup is handled by socketService
+        // socketService.disconnect(); // Don't disconnect immediately, allow reuse
       };
+    } else {
+      // Disconnect socket if user logs out
+      if (socket) {
+        socketService.disconnect();
+        setSocket(null);
+      }
     }
   }, [user]);
 
