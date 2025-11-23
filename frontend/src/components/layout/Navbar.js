@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { FiMenu, FiBell, FiUser, FiLogOut } from 'react-icons/fi';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BRAND } from '@/config/brand';
 import Avatar from '@/components/ui/Avatar';
 
@@ -11,6 +11,30 @@ export default function Navbar() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      // Assuming GET /notifications?status=unread returns unread notifications
+      // Or we can fetch all and filter. Let's try fetching unread specifically if API supports it, 
+      // otherwise fetch all. Based on notifications.js, it supports status filter.
+      // However, to be lightweight, maybe we just need a count endpoint? 
+      // For now, let's use the existing endpoint.
+      const res = await import('@/utils/apiClient').then(mod => mod.default.get('/notifications/unread-count'));
+      if (res.data && res.data.data) {
+        setUnreadCount(res.data.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification count', error);
+    }
+  };
 
   const handleLogout = () => logout();
 
@@ -67,11 +91,13 @@ export default function Navbar() {
                   <Link href={BRAND.urls.dashboard} className={`font-medium ${isActive('/dashboard') ? 'text-primary-700' : 'text-neutral-700 hover:text-primary-700'}`}>
                     Dashboard
                   </Link>
-                  <Link href="/notifications" className="relative text-neutral-700 hover:text-primary-700" aria-label="Notifications">
+                  <Link href="/dashboard/notifications" className="relative text-neutral-700 hover:text-primary-700" aria-label="Notifications">
                     <FiBell className="w-5 h-5" />
-                    <span className="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-4 h-4 grid place-items-center">
-                      3
-                    </span>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full w-4 h-4 grid place-items-center border-2 border-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   <div className="relative" onMouseEnter={() => setDropdownOpen(true)} onMouseLeave={() => setDropdownOpen(false)}>
                     <button className="flex items-center gap-2 text-neutral-700 hover:text-primary-700 py-2" aria-haspopup="menu" aria-expanded={dropdownOpen}>

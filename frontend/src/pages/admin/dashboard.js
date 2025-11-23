@@ -166,10 +166,10 @@ export default function AdminDashboard() {
                     {dashboardData.popularInternships.slice(0, 5).map((internship) => (
                       <tr key={internship._id} className="border-t border-neutral-100">
                         <td className="px-3 py-1.5 font-medium text-neutral-900">{internship.title}</td>
-                        <td className="px-3 py-1.5 text-neutral-600">{internship.category}</td>
+                        <td className="px-3 py-1.5 text-neutral-600">{internship.domain}</td>
                         <td className="px-3 py-1.5 text-neutral-900">{internship.enrollmentCount}</td>
                         <td className="px-3 py-1.5">
-                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${internship.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-600'}`}>{internship.status}</span>
+                          <span className="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-700">active</span>
                         </td>
                       </tr>
                     ))}
@@ -196,10 +196,10 @@ export default function AdminDashboard() {
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${enrollment.status === 'approved'
-                                ? 'bg-green-100 text-green-800'
-                                : enrollment.status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-blue-100 text-blue-800'
+                              ? 'bg-green-100 text-green-800'
+                              : enrollment.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-blue-100 text-blue-800'
                               }`}
                           >
                             {enrollment.status}
@@ -230,8 +230,8 @@ export default function AdminDashboard() {
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${submission.status === 'graded'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-blue-100 text-blue-800'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-blue-100 text-blue-800'
                               }`}
                           >
                             {submission.status}

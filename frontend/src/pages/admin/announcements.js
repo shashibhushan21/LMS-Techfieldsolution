@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import EmptyState from '@/components/admin/EmptyState';
 import { FiEdit2, FiTrash2, FiPlus, FiX, FiAlertCircle } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 export default function AdminAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
@@ -14,7 +15,7 @@ export default function AdminAnnouncements() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ title: '', message: '', type: 'info', audience: 'all' });
+  const [form, setForm] = useState({ title: '', content: '', type: 'general', targetAudience: 'all' });
 
   const load = async () => {
     try {
@@ -29,66 +30,71 @@ export default function AdminAnnouncements() {
 
   useEffect(() => { load(); }, []);
 
-  const handleCreate = () => {
-    setForm({ title: '', message: '', type: 'info', audience: 'all' });
-    setEditingId(null);
-    setShowModal(true);
-  };
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showModal) {
+        setShowModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showModal]);
 
-  const handleEdit = (announcement) => {
-    setForm({
-      title: announcement.title,
-      message: announcement.message,
-      type: announcement.type || 'info',
-      audience: announcement.audience || 'all'
-    });
-    setEditingId(announcement._id);
+  const handleCreate = () => {
+    setForm({ title: '', content: '', type: 'general', targetAudience: 'all' });
+    setEditingId(null);
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.message) return;
+    if (!form.title || !form.content) return;
     setSubmitting(true);
     try {
       if (editingId) {
         await apiClient.put(`/announcements/${editingId}`, form);
+        toast.success('Announcement updated successfully');
       } else {
         await apiClient.post('/announcements', form);
+        toast.success('Announcement created successfully');
       }
       setShowModal(false);
       load();
     } catch (err) {
       console.error('Failed to save announcement', err);
-      alert('Failed to save announcement');
+      toast.error(err.response?.data?.message || 'Failed to save announcement');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
     try {
       await apiClient.delete(`/announcements/${id}`);
+      toast.success('Announcement deleted successfully');
       load();
     } catch (err) {
       console.error('Failed to delete announcement', err);
-      alert('Failed to delete announcement');
+      toast.error(err.response?.data?.message || 'Failed to delete announcement');
     }
   };
 
   const typeColors = {
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    danger: 'bg-red-50 border-red-200 text-red-800'
+    general: 'bg-blue-50 border-blue-200 text-blue-800',
+    urgent: 'bg-red-50 border-red-200 text-red-800',
+    update: 'bg-green-50 border-green-200 text-green-800',
+    reminder: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    event: 'bg-purple-50 border-purple-200 text-purple-800'
   };
 
   const typeIcons = {
-    info: '💡',
-    success: '✅',
-    warning: '⚠️',
-    danger: '🚨'
+    general: '📢',
+    urgent: '🚨',
+    update: '✅',
+    reminder: '⏰',
+    event: '📅'
   };
 
   return (
@@ -118,7 +124,7 @@ export default function AdminAnnouncements() {
         ) : (
           <div className="mt-6 grid gap-4">
             {announcements.map(announcement => {
-              const type = (announcement.type && typeColors[announcement.type]) ? announcement.type : 'info';
+              const type = (announcement.type && typeColors[announcement.type]) ? announcement.type : 'general';
               const colorClass = typeColors[type];
 
               return (
@@ -132,12 +138,12 @@ export default function AdminAnnouncements() {
                             {type}
                           </span>
                           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-neutral-100 text-neutral-700">
-                            {announcement.audience || 'all'}
+                            {announcement.targetAudience || 'all'}
                           </span>
                         </div>
                         <CardTitle className="text-xl">{announcement.title}</CardTitle>
                         <CardDescription className="mt-2 text-sm leading-relaxed">
-                          {announcement.message}
+                          {announcement.content}
                         </CardDescription>
                         <p className="text-xs text-neutral-500 mt-3">
                           Posted {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
@@ -200,8 +206,8 @@ export default function AdminAnnouncements() {
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Message *</label>
                   <textarea
-                    value={form.message}
-                    onChange={e => setForm({ ...form, message: e.target.value })}
+                    value={form.content}
+                    onChange={e => setForm({ ...form, content: e.target.value })}
                     className="input w-full"
                     rows={4}
                     placeholder="Describe the announcement in detail..."
@@ -217,31 +223,31 @@ export default function AdminAnnouncements() {
                       onChange={e => setForm({ ...form, type: e.target.value })}
                       className="input w-full"
                     >
-                      <option value="info">Info</option>
-                      <option value="success">Success</option>
-                      <option value="warning">Warning</option>
-                      <option value="danger">Danger</option>
+                      <option value="general">General</option>
+                      <option value="urgent">Urgent</option>
+                      <option value="update">Update</option>
+                      <option value="reminder">Reminder</option>
+                      <option value="event">Event</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-2">Audience</label>
                     <select
-                      value={form.audience}
-                      onChange={e => setForm({ ...form, audience: e.target.value })}
+                      value={form.targetAudience}
+                      onChange={e => setForm({ ...form, targetAudience: e.target.value })}
                       className="input w-full"
                     >
                       <option value="all">All Users</option>
-                      <option value="intern">Interns Only</option>
-                      <option value="mentor">Mentors Only</option>
-                      <option value="admin">Admins Only</option>
+                      <option value="interns">Interns Only</option>
+                      <option value="mentors">Mentors Only</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
                   <FiAlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>This announcement will be visible to {form.audience === 'all' ? 'all users' : form.audience + 's'} immediately.</span>
+                  <span>This announcement will be visible to {form.targetAudience === 'all' ? 'all users' : form.targetAudience} immediately.</span>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200">

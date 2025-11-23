@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }) {
       { href: '/dashboard/assignments', icon: FiFileText, label: 'Assignments' },
       { href: '/dashboard/certificates', icon: FiAward, label: 'Certificates' },
       { href: '/dashboard/messages', icon: FiMessageSquare, label: 'Messages' },
-      { href: '/notifications', icon: FiBell, label: 'Notifications' },
+      { href: '/dashboard/notifications', icon: FiBell, label: 'Notifications' },
     ];
 
 

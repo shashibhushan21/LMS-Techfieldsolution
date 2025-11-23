@@ -7,7 +7,16 @@ const Notification = require('../models/Notification');
  */
 exports.getNotifications = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user.id })
+    const { status } = req.query;
+    const query = { recipient: req.user.id };
+
+    if (status === 'unread') {
+      query.isRead = false;
+    } else if (status === 'read') {
+      query.isRead = true;
+    }
+
+    const notifications = await Notification.find(query)
       .sort({ createdAt: -1 })
       .limit(50);
 

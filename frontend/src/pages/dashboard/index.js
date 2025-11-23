@@ -7,12 +7,14 @@ import StatsCard from '@/components/dashboard/StatsCard';
 import ProgressCard from '@/components/dashboard/ProgressCard';
 import AssignmentCard from '@/components/dashboard/AssignmentCard';
 import apiClient from '@/utils/apiClient';
+import AnnouncementBanner from '@/components/dashboard/AnnouncementBanner';
 import { FiBookOpen, FiFileText, FiAward, FiTrendingUp, FiCalendar, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 
 export default function InternDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +45,21 @@ export default function InternDashboard() {
       setLoading(false);
     }
   };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await apiClient.get('/announcements');
+      setAnnouncements(response.data.data || []);
+    } catch (error) {
+      console.error('Failed to fetch announcements:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.role === 'intern') {
+      fetchAnnouncements();
+    }
+  }, [user]);
 
   if (authLoading || loading) {
     return (
@@ -83,6 +100,11 @@ export default function InternDashboard() {
               <p className="text-primary-100 text-lg">Track your progress and continue your learning journey</p>
             </div>
           </div>
+
+          {/* Announcements */}
+          {announcements.length > 0 && (
+            <AnnouncementBanner announcements={announcements} userRole={user?.role} />
+          )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -161,7 +183,7 @@ export default function InternDashboard() {
                 </div>
 
                 {dashboardData.recentAssignments && dashboardData.recentAssignments.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="flex flex-col gap-4">
                     {dashboardData.recentAssignments.slice(0, 3).map((assignment) => (
                       <AssignmentCard key={assignment._id} assignment={assignment} />
                     ))}

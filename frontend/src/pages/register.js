@@ -5,6 +5,7 @@ import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-toastify';
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiPhone } from 'react-icons/fi';
+import { validatePassword } from '@/utils/validation';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -28,13 +29,10 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    // Validate password
+    const passwordValidation = validatePassword(formData.password, formData.confirmPassword);
+    if (!passwordValidation.valid) {
+      toast.error(passwordValidation.error);
       return;
     }
 

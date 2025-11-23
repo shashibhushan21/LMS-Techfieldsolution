@@ -11,7 +11,7 @@ export function Card({ className, children }) {
 }
 
 export function CardHeader({ className, children }) {
-  return <div className={cn('px-5 pt-5', className)}>{children}</div>;
+  return <div className={cn('px-5 pt-5 pb-5', className)}>{children}</div>;
 }
 
 export function CardTitle({ className, children }) {

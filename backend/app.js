@@ -22,6 +22,12 @@ connectDB().then(() => {
 
 const app = express();
 
+// CORS - Must be first
+app.use(cors({
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
+
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
@@ -34,12 +40,6 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
-
-// CORS
-app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}));
 
 // Body parser
 app.use(express.json());

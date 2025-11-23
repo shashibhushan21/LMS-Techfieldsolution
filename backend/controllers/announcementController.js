@@ -7,17 +7,17 @@ const Announcement = require('../models/Announcement');
  */
 exports.getAnnouncements = async (req, res, next) => {
   try {
-    const { targetRole, internship } = req.query;
+    const { targetAudience, internship } = req.query;
 
     const query = {};
-    if (targetRole) query.targetRole = targetRole;
+    if (targetAudience) query.targetAudience = targetAudience;
     if (internship) query.internship = internship;
 
     // Interns only see announcements for all or their role
     if (req.user.role === 'intern') {
       query.$or = [
-        { targetRole: 'all' },
-        { targetRole: 'intern' }
+        { targetAudience: 'all' },
+        { targetAudience: 'interns' }
       ];
     }
 
@@ -73,6 +73,38 @@ exports.createAnnouncement = async (req, res, next) => {
     req.body.author = req.user.id;
 
     const announcement = await Announcement.create(req.body);
+
+    // Create notifications for target audience
+    const Notification = require('../models/Notification');
+    const User = require('../models/User');
+
+    let query = {};
+    if (req.body.targetAudience === 'interns') {
+      query.role = 'intern';
+    } else if (req.body.targetAudience === 'mentors') {
+      query.role = 'mentor';
+    } else if (req.body.targetAudience === 'all') {
+      query.role = { $in: ['intern', 'mentor'] };
+    }
+
+    if (Object.keys(query).length > 0) {
+      const users = await User.find(query).select('_id');
+
+      const notifications = users.map(user => ({
+        recipient: user._id,
+        sender: req.user.id,
+        type: 'new_announcement',
+        title: 'New Announcement: ' + announcement.title,
+        message: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
+        data: { announcementId: announcement._id },
+        link: '/dashboard', // Or a specific announcement page if it exists
+        priority: announcement.type === 'urgent' ? 'high' : 'medium'
+      }));
+
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    }
 
     res.status(201).json({
       success: true,
