@@ -53,13 +53,25 @@ exports.getInternships = async (req, res, next) => {
       .skip(startIndex)
       .limit(limit);
 
+    // Dynamically calculate enrollment counts to ensure accuracy
+    const Enrollment = require('../models/Enrollment');
+    const internshipsWithCounts = await Promise.all(internships.map(async (internship) => {
+      const count = await Enrollment.countDocuments({
+        internship: internship._id,
+        status: { $in: ['active', 'completed', 'approved'] }
+      });
+      const internshipObj = internship.toObject();
+      internshipObj.currentEnrollments = count;
+      return internshipObj;
+    }));
+
     res.status(200).json({
       success: true,
-      count: internships.length,
+      count: internshipsWithCounts.length,
       total,
       page,
       pages: Math.ceil(total / limit),
-      data: internships
+      data: internshipsWithCounts
     });
   } catch (error) {
     next(error);

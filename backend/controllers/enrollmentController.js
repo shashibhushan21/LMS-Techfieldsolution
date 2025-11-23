@@ -25,10 +25,44 @@ exports.getEnrollments = async (req, res, next) => {
       .populate('internship', 'title domain company duration')
       .sort({ createdAt: -1 });
 
+    // Dynamically calculate progress
+    const Assignment = require('../models/Assignment');
+    const Submission = require('../models/Submission');
+
+    const enrollmentsWithProgress = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        const enrollmentObj = enrollment.toObject();
+
+        if (enrollment.internship) {
+          const totalAssignments = await Assignment.countDocuments({
+            internship: enrollment.internship._id
+          });
+
+          if (totalAssignments > 0) {
+            const assignmentIds = await Assignment.find({
+              internship: enrollment.internship._id
+            }).distinct('_id');
+
+            const completedAssignments = await Submission.countDocuments({
+              user: enrollment.user._id,
+              assignment: { $in: assignmentIds },
+              status: { $in: ['submitted', 'graded'] }
+            });
+
+            enrollmentObj.progressPercentage = Math.round((completedAssignments / totalAssignments) * 100);
+          } else {
+            enrollmentObj.progressPercentage = 0;
+          }
+        }
+
+        return enrollmentObj;
+      })
+    );
+
     res.status(200).json({
       success: true,
-      count: enrollments.length,
-      data: enrollments
+      count: enrollmentsWithProgress.length,
+      data: enrollmentsWithProgress
     });
   } catch (error) {
     next(error);
