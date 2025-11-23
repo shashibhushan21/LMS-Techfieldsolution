@@ -45,8 +45,8 @@ export default function Navbar() {
         { href: '/about', label: 'About' },
       ];
 
-      // Hide internships for interns as they have their own dashboard
-      if (user?.role === 'intern') {
+      // Hide internships for interns and mentors as they have their own dashboard
+      if (user?.role === 'intern' || user?.role === 'mentor') {
         return allLinks.filter(l => l.href !== '/internships');
       }
 

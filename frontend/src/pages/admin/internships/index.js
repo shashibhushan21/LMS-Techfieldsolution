@@ -135,19 +135,19 @@ export default function InternshipList() {
                                                 <div className="bg-white rounded-md shadow-lg py-1 border border-gray-200">
                                                     <Link
                                                         href={`/admin/internships/${internship._id}`}
-                                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                                     >
                                                         <FiEdit2 className="mr-2 h-4 w-4" /> Edit Details
                                                     </Link>
                                                     <Link
                                                         href={`/admin/internships/${internship._id}/curriculum`}
-                                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                                                     >
                                                         <FiBookOpen className="mr-2 h-4 w-4" /> Manage Curriculum
                                                     </Link>
                                                     <button
                                                         onClick={() => handleDelete(internship._id)}
-                                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
                                                     >
                                                         <FiTrash2 className="mr-2 h-4 w-4" /> Delete
                                                     </button>

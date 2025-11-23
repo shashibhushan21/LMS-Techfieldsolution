@@ -23,7 +23,14 @@ exports.getSubmissions = async (req, res, next) => {
 
     const submissions = await Submission.find(query)
       .populate('user', 'firstName lastName email avatar')
-      .populate('assignment', 'title dueDate maxScore')
+      .populate({
+        path: 'assignment',
+        select: 'title dueDate maxScore internship',
+        populate: {
+          path: 'internship',
+          select: 'title'
+        }
+      })
       .sort({ submittedAt: -1 });
 
     res.status(200).json({

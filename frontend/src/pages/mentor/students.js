@@ -60,20 +60,20 @@ export default function MentorStudents() {
   return (
     <>
       <Head>
-        <title>My Students - Mentor Dashboard</title>
+        <title>My Interns - Mentor Dashboard</title>
       </Head>
 
       <DashboardLayout>
         <div className="space-y-4">
           <div className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm">
-            <h1 className="text-xl font-bold text-gray-900">My Students</h1>
-            <p className="text-sm text-gray-600 mt-0.5">Manage and track student progress</p>
+            <h1 className="text-xl font-bold text-gray-900">My Interns</h1>
+            <p className="text-sm text-gray-600 mt-0.5">Manage and track intern progress</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <input
               type="text"
-              placeholder="Search students by name or email..."
+              placeholder="Search interns by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -125,7 +125,7 @@ export default function MentorStudents() {
           ) : (
             <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
               <p className="text-gray-500">
-                {searchTerm ? 'No students found matching your search' : 'No students assigned yet'}
+                {searchTerm ? 'No interns found matching your search' : 'No interns assigned yet'}
               </p>
             </div>
           )}

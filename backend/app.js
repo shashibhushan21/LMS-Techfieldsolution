@@ -82,6 +82,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/mentors', require('./routes/mentors'));
 
 // Error handler (must be last)
 app.use(errorHandler);

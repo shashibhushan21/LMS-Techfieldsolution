@@ -102,12 +102,12 @@ export default function MyInternships() {
                         </div>
                       </div>
 
-                      {enrollment.progress !== undefined && (
+                      {enrollment.progressPercentage !== undefined && (
                         <ProgressCard
                           title="Overall Progress"
-                          current={enrollment.progress}
+                          current={enrollment.progressPercentage}
                           total={100}
-                          percentage={enrollment.progress}
+                          percentage={enrollment.progressPercentage}
                           color="primary"
                         />
                       )}
