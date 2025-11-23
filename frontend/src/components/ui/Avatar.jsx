@@ -1,9 +1,13 @@
+import { useState } from 'react';
+
 export default function Avatar({ 
   src, 
   name, 
   size = 'md', 
   className = '' 
 }) {
+  const [imageError, setImageError] = useState(false);
+
   const sizeClasses = {
     xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-sm',
@@ -36,7 +40,11 @@ export default function Avatar({
     return colors[index];
   };
 
-  const hasValidAvatar = src && src !== 'default-avatar.png' && !src.includes('default');
+  const hasValidAvatar = src && 
+                        src !== 'default-avatar.png' && 
+                        !src.includes('default') && 
+                        !imageError &&
+                        src.trim() !== '';
 
   if (hasValidAvatar) {
     return (
@@ -44,6 +52,7 @@ export default function Avatar({
         src={src}
         alt={name || 'User'}
         className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+        onError={() => setImageError(true)}
       />
     );
   }
@@ -51,6 +60,7 @@ export default function Avatar({
   return (
     <div
       className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-semibold text-white ${getColorFromName(name)} ${className}`}
+      title={name || 'User'}
     >
       {getInitials(name)}
     </div>

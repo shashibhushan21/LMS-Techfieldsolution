@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Avatar = ({ name = 'User', src, size = 'md', className = '' }) => {
+  const [imageError, setImageError] = useState(false);
+
   const getInitials = (fullName) => {
     if (!fullName) return 'U';
     const names = fullName.trim().split(' ');
@@ -41,19 +43,21 @@ const Avatar = ({ name = 'User', src, size = 'md', className = '' }) => {
   const colorClass = getColorClass(name);
   const sizeClass = sizeClasses[size] || sizeClasses.md;
 
-  if (src) {
+  // Check if avatar source is valid
+  const hasValidAvatar = src && 
+                        src !== 'default-avatar.png' && 
+                        !src.includes('default') && 
+                        !imageError &&
+                        src.trim() !== '';
+
+  if (hasValidAvatar) {
     return (
       <div className={`${sizeClass} rounded-full overflow-hidden flex-shrink-0 ${className}`}>
         <img
           src={src}
           alt={name}
           className="w-full h-full object-cover"
-          onError={(e) => {
-            // Fallback to initials if image fails to load
-            e.target.style.display = 'none';
-            e.target.parentElement.classList.add(colorClass);
-            e.target.parentElement.innerHTML = `<span class="flex items-center justify-center w-full h-full text-white font-semibold">${initials}</span>`;
-          }}
+          onError={() => setImageError(true)}
         />
       </div>
     );
