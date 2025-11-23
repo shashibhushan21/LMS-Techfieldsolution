@@ -234,6 +234,7 @@ exports.updateProfile = async (req, res, next) => {
       data: user
     });
   } catch (error) {
+    console.error('Profile update error:', error);
     next(error);
   }
 };

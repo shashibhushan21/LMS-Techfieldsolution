@@ -11,7 +11,7 @@ import { FiUser, FiLock, FiMail, FiPhone, FiCalendar, FiSave } from 'react-icons
 import { validatePassword } from '@/utils/validation';
 
 export default function InternProfile() {
-    const { user, setUser, loading: authLoading } = useAuth();
+    const { user, updateProfile, loading: authLoading } = useAuth();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
@@ -64,16 +64,20 @@ export default function InternProfile() {
             return;
         }
 
-        const formattedPhone = `+91 ${digits}`;
+        const formattedPhone = `+91${digits}`;
         const updatedProfile = { ...profileForm, phone: formattedPhone };
 
         setLoading(true);
         try {
-            const res = await apiClient.put('/auth/update-profile', updatedProfile);
-            setUser(res.data.user);
-            toast.success('Profile updated successfully');
+            const result = await updateProfile(updatedProfile);
+            if (result.success) {
+                toast.success('Profile updated successfully');
+            } else {
+                throw new Error(result.message);
+            }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to update profile');
+            console.error('Profile update error:', error);
+            toast.error(error.message || 'Failed to update profile');
         } finally {
             setLoading(false);
         }
