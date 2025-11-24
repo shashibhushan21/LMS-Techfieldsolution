@@ -106,7 +106,11 @@ export default function AdminMessages() {
             const currentUserId = user?._id || user?.id;
             fetchedMessages.forEach(msg => {
                 const senderIds = msg.sender?._id || msg.sender?.id || msg.sender;
-                if (senderIds !== currentUserId && !msg.readBy?.some(r => r.user === currentUserId)) {
+                const isReadByUser = msg.readBy?.some(r => {
+                    const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                    return readByUserId === currentUserId;
+                });
+                if (senderIds !== currentUserId && !isReadByUser) {
                     markMessageAsRead(msg._id);
                 }
             });
@@ -149,7 +153,10 @@ export default function AdminMessages() {
                 if (selectedConversation && data.conversationId === selectedConversation._id) {
                     return prev.map(m => {
                         if (data.messageId && m._id !== data.messageId) return m;
-                        const alreadyRead = m.readBy?.some(r => r.user === data.userId);
+                        const alreadyRead = m.readBy?.some(r => {
+                            const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                            return readByUserId === data.userId;
+                        });
                         if (!alreadyRead) {
                             return {
                                 ...m,
@@ -282,7 +289,10 @@ export default function AdminMessages() {
         const messageSenderId = message.sender?._id || message.sender?.id || message.sender;
         if (messageSenderId !== currentUserId) return null;
         const otherParticipants = selectedConversation?.participants.filter(p => (p._id || p.id) !== currentUserId);
-        const isRead = otherParticipants?.every(p => message.readBy?.some(r => (r.user === p._id || r.user === p.id)));
+        const isRead = otherParticipants?.every(p => message.readBy?.some(r => {
+            const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+            return readByUserId === p._id || readByUserId === p.id;
+        }));
         return isRead ? (
             <div className="flex items-center gap-0.5">
                 <FiCheck className="w-3.5 h-3.5 text-blue-500" strokeWidth={3} />

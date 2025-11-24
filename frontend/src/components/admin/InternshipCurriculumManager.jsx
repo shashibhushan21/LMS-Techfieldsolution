@@ -46,7 +46,10 @@ export default function InternshipCurriculumManager({
     // Attach assignments to their respective modules
     const modulesWithAssignments = modules.map(module => ({
       ...module,
-      assignments: assignments.filter(a => a.module?.toString() === module._id.toString())
+      assignments: assignments.filter(a => {
+        const assignmentModuleId = typeof a.module === 'object' ? a.module?._id : a.module;
+        return assignmentModuleId?.toString() === module._id.toString();
+      })
     }));
 
     // Ensure internship is at the top level
