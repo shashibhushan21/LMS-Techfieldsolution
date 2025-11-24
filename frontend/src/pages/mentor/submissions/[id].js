@@ -11,19 +11,45 @@ import {
   FiSave, FiSend
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function SubmissionGrading() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
 
-  const [submission, setSubmission] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [grading, setGrading] = useState(false);
   const [formData, setFormData] = useState({
     score: '',
     feedback: ''
   });
+
+  const {
+    data: submission,
+    loading,
+    execute: fetchSubmission
+  } = useApiCall(
+    () => apiClient.get(`/mentors/submissions/${id}`).then(res => ({ data: res.data.data })),
+    {
+      initialData: null,
+      errorMessage: 'Failed to load submission',
+      onError: (error) => {
+        if (error.response?.status === 403 || error.response?.status === 404) {
+          router.push('/mentor/submissions');
+        }
+      },
+      onSuccess: (data) => {
+        // Pre-fill form if already graded
+        if (data.status === 'graded') {
+          setFormData({
+            score: data.score || '',
+            feedback: data.feedback || ''
+          });
+        }
+      }
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -36,31 +62,6 @@ export default function SubmissionGrading() {
       }
     }
   }, [user, authLoading, id]);
-
-  const fetchSubmission = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get(`/mentors/submissions/${id}`);
-      const submissionData = response.data.data;
-      setSubmission(submissionData);
-
-      // Pre-fill form if already graded
-      if (submissionData.status === 'graded') {
-        setFormData({
-          score: submissionData.score || '',
-          feedback: submissionData.feedback || ''
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch submission:', error);
-      toast.error('Failed to load submission');
-      if (error.response?.status === 403 || error.response?.status === 404) {
-        router.push('/mentor/submissions');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmitGrade = async () => {
     // Validation
@@ -110,8 +111,8 @@ export default function SubmissionGrading() {
   if (authLoading || loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );

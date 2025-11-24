@@ -42,7 +42,10 @@ export default function AdminCertificates() {
     const { loading, execute: fetchCertificates } = useApiCall(
         () => apiClient.get('/certificates'),
         {
-            onSuccess: (response) => setCertificates(response.data.data || []),
+            onSuccess: (data) => {
+                const certificatesArray = Array.isArray(data) ? data : (data?.data || []);
+                setCertificates(certificatesArray);
+            },
             errorMessage: 'Failed to load certificates'
         }
     );

@@ -45,13 +45,16 @@ ChartJS.register(
 );
 
 export default function AdminAnalytics() {
-  const { data, loading, error, execute: load } = useApiCall(
+  const { data: rawData, loading, error, execute: load } = useApiCall(
     () => apiClient.get('/analytics/dashboard/admin'),
     {
       errorMessage: 'Failed to load analytics',
       initialData: null
     }
   );
+
+  // Extract the actual data from nested structure
+  const data = rawData?.data || rawData;
 
   useEffect(() => {
     load();

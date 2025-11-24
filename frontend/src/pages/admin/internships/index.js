@@ -27,7 +27,10 @@ export default function InternshipList() {
     const { loading, execute: fetchInternships } = useApiCall(
         () => apiClient.get('/internships'),
         {
-            onSuccess: (response) => setInternships(response.data),
+            onSuccess: (data) => {
+                const internshipsArray = Array.isArray(data) ? data : (data?.data || []);
+                setInternships(internshipsArray);
+            },
             errorMessage: 'Failed to load internships',
             showErrorToast: true
         }

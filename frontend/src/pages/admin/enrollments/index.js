@@ -34,7 +34,10 @@ export default function EnrollmentManagement() {
     const { loading, execute: fetchEnrollments } = useApiCall(
         () => apiClient.get('/enrollments'),
         {
-            onSuccess: (response) => setEnrollments(response.data.data || []),
+            onSuccess: (data) => {
+                const enrollmentsArray = Array.isArray(data) ? data : (data?.data || []);
+                setEnrollments(enrollmentsArray);
+            },
             errorMessage: 'Failed to load enrollments'
         }
     );

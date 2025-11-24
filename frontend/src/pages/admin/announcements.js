@@ -32,7 +32,10 @@ export default function AdminAnnouncements() {
   const { loading, execute: load } = useApiCall(
     () => apiClient.get('/announcements'),
     {
-      onSuccess: (res) => setAnnouncements(res.data || []),
+      onSuccess: (data) => {
+        const announcementsArray = Array.isArray(data) ? data : (data?.data || []);
+        setAnnouncements(announcementsArray);
+      },
       errorMessage: 'Failed to fetch announcements'
     }
   );

@@ -31,9 +31,14 @@ export default function AdminUsers() {
 
   // Use custom hook for API calls
   const { data, loading, execute: loadUsers } = useApiCall(
-    () => apiClient.get('/users'),
+    () => apiClient.get('/users?limit=1000'),
     {
-      onSuccess: (response) => setUsers(response.data || []),
+      onSuccess: (data) => {
+        // Backend returns { data: { data: [...] } }, useApiCall extracts first .data
+        // So we receive { data: [...] } and need to extract .data again
+        const usersArray = Array.isArray(data) ? data : (data?.data || []);
+        setUsers(usersArray);
+      },
       errorMessage: 'Failed to load users',
       showErrorToast: true
     }

@@ -40,7 +40,10 @@ export default function AdminSubmissions() {
             return apiClient.get(`/submissions${params}`);
         },
         {
-            onSuccess: (response) => setSubmissions(response.data || []),
+            onSuccess: (data) => {
+                const submissionsArray = Array.isArray(data) ? data : (data?.data || []);
+                setSubmissions(submissionsArray);
+            },
             errorMessage: 'Failed to load submissions',
             showErrorToast: true
         }
@@ -230,8 +233,8 @@ export default function AdminSubmissions() {
                                             key={option.value}
                                             onClick={() => setFilter(option.value)}
                                             className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filter === option.value
-                                                    ? 'bg-primary-600 text-white shadow-md'
-                                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                                                ? 'bg-primary-600 text-white shadow-md'
+                                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {option.label}

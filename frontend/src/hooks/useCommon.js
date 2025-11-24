@@ -16,10 +16,11 @@ export function useApiCall(apiFunction, options = {}) {
         successMessage,
         errorMessage = 'An error occurred',
         showSuccessToast = false,
-        showErrorToast = true
+        showErrorToast = true,
+        initialData = null
     } = options;
 
-    const [data, setData] = useState(null);
+    const [data, setData] = useState(initialData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 

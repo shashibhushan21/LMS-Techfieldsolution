@@ -10,18 +10,37 @@ import {
   FiCheckCircle, FiClock, FiAward, FiMessageSquare,
   FiTrendingUp, FiActivity
 } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function StudentDetail() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
 
-  const [student, setStudent] = useState(null);
-  const [enrollments, setEnrollments] = useState([]);
-  const [submissions, setSubmissions] = useState([]);
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+
+  const {
+    data: studentData,
+    loading,
+    execute: fetchStudentData
+  } = useApiCall(
+    () => apiClient.get(`/mentors/students/${id}`).then(res => ({ data: res.data.data })),
+    {
+      initialData: null,
+      errorMessage: 'Failed to load student data',
+      onError: (error) => {
+        if (error.response?.status === 403 || error.response?.status === 404) {
+          router.push('/mentor/students');
+        }
+      }
+    }
+  );
+
+  const student = studentData?.student;
+  const enrollments = studentData?.enrollments || [];
+  const submissions = studentData?.submissions || [];
 
   useEffect(() => {
     if (!authLoading) {
@@ -35,29 +54,11 @@ export default function StudentDetail() {
     }
   }, [user, authLoading, id]);
 
-  const fetchStudentData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch all student data from mentor endpoint
-      const response = await apiClient.get(`/mentors/students/${id}`);
-      const { student, enrollments, submissions } = response.data.data;
-
-      setStudent(student);
-      setEnrollments(enrollments || []);
-      setSubmissions(submissions || []);
-
-      // Calculate stats
-      calculateStats(enrollments || [], submissions || []);
-    } catch (error) {
-      console.error('Failed to fetch student data:', error);
-      if (error.response?.status === 403 || error.response?.status === 404) {
-        router.push('/mentor/students');
-      }
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (enrollments.length > 0 || submissions.length > 0) {
+      calculateStats(enrollments, submissions);
     }
-  };
+  }, [enrollments, submissions]);
 
   const calculateStats = (enrollments, submissions) => {
     const totalEnrollments = enrollments.length;
@@ -103,8 +104,8 @@ export default function StudentDetail() {
   if (authLoading || loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -247,8 +248,8 @@ export default function StudentDetail() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
-                          ? 'text-primary-600 border-b-2 border-primary-600'
-                          : 'text-gray-500 hover:text-gray-700'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -381,8 +382,8 @@ export default function StudentDetail() {
                                   Enrolled: {new Date(enrollment.createdAt).toLocaleDateString()}
                                 </span>
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
-                                    enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-gray-100 text-gray-800'
+                                  enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-gray-100 text-gray-800'
                                   }`}>
                                   {enrollment.status}
                                 </span>

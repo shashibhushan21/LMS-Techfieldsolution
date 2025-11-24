@@ -6,12 +6,24 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import apiClient from '@/utils/apiClient';
 import { toast } from 'react-toastify';
 import { FiAward, FiDownload, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { LoadingSpinner } from '@/components/ui';
+import { useApiCall } from '@/hooks/useCommon';
 
 export default function InternCertificates() {
   const { user } = useAuth();
   const router = useRouter();
-  const [certificates, setCertificates] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: certificates,
+    loading,
+    execute: fetchCertificates
+  } = useApiCall(
+    () => apiClient.get('/certificates').then(res => ({ data: res.data.data || [] })),
+    {
+      initialData: [],
+      errorMessage: 'Failed to load certificates'
+    }
+  );
 
   useEffect(() => {
     if (user && user.role !== 'intern') {
@@ -22,18 +34,6 @@ export default function InternCertificates() {
       fetchCertificates();
     }
   }, [user]);
-
-  const fetchCertificates = async () => {
-    try {
-      const response = await apiClient.get('/certificates');
-      setCertificates(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch certificates:', error);
-      toast.error('Failed to load certificates');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDownload = (pdfUrl) => {
     if (pdfUrl) {
@@ -46,8 +46,8 @@ export default function InternCertificates() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );

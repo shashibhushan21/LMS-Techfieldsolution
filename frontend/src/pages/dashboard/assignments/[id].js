@@ -10,14 +10,13 @@ import {
     FiArrowLeft, FiClock, FiCalendar, FiAward, FiFileText,
     FiUpload, FiCheckCircle, FiAlertCircle, FiDownload
 } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function AssignmentDetails() {
     const router = useRouter();
     const { id } = router.query;
     const { user } = useAuth();
-    const [assignment, setAssignment] = useState(null);
-    const [submission, setSubmission] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     // Form state
@@ -26,32 +25,40 @@ export default function AssignmentDetails() {
     const [liveLink, setLiveLink] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
 
-    useEffect(() => {
-        if (id && user) {
-            fetchAssignmentDetails();
-        }
-    }, [id, user]);
+    const {
+        data: assignmentData,
+        loading,
+        execute: fetchAssignmentDetails
+    } = useApiCall(
+        async () => {
+            if (!user) return { data: null };
 
-    const fetchAssignmentDetails = async () => {
-        if (!user) return;
-
-        try {
             const [assignmentRes, submissionRes] = await Promise.all([
                 apiClient.get(`/assignments/${id}`),
                 apiClient.get(`/submissions?assignment=${id}&user=${user._id}`).catch(() => ({ data: { data: [] } }))
             ]);
 
-            setAssignment(assignmentRes.data.data);
-            if (submissionRes.data.data && submissionRes.data.data.length > 0) {
-                setSubmission(submissionRes.data.data[0]);
-            }
-        } catch (error) {
-            console.error('Error fetching assignment:', error);
-            toast.error('Failed to load assignment details');
-        } finally {
-            setLoading(false);
+            const assignment = assignmentRes.data.data;
+            const submission = submissionRes.data.data && submissionRes.data.data.length > 0
+                ? submissionRes.data.data[0]
+                : null;
+
+            return { data: { assignment, submission } };
+        },
+        {
+            initialData: null,
+            errorMessage: 'Failed to load assignment details'
         }
-    };
+    );
+
+    const assignment = assignmentData?.assignment;
+    const submission = assignmentData?.submission;
+
+    useEffect(() => {
+        if (id && user) {
+            fetchAssignmentDetails();
+        }
+    }, [id, user]);
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
@@ -110,8 +117,8 @@ export default function AssignmentDetails() {
     if (loading) {
         return (
             <DashboardLayout>
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div className="flex justify-center py-12">
+                    <LoadingSpinner size="lg" />
                 </div>
             </DashboardLayout>
         );

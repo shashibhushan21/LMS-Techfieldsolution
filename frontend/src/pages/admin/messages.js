@@ -101,7 +101,7 @@ export default function AdminMessages() {
             const fetchedMessages = response.data.data || [];
             setMessages(fetchedMessages);
             if (socket) socket.emit('join_conversation', conversationId);
-            
+
             // Mark unread messages as read
             const currentUserId = user?._id || user?.id;
             fetchedMessages.forEach(msg => {
@@ -116,24 +116,18 @@ export default function AdminMessages() {
     };
 
     useEffect(() => {
-        if (!socket) {
-            console.log('Socket not available yet');
-            return;
-        }
 
-        console.log('Setting up socket listeners...');
+
+
 
         const handleNewMessage = (message) => {
-            console.log('Received new_message event:', message);
             const msgConvId = message.conversation || message.conversationId;
 
             setMessages((prev) => {
                 if (selectedConversation && msgConvId === selectedConversation._id) {
                     if (prev.some(m => m._id === message._id)) {
-                        console.log('Duplicate message, skipping');
                         return prev;
                     }
-                    console.log('Adding new message to state');
                     return [...prev, message];
                 }
                 return prev;
@@ -146,12 +140,11 @@ export default function AdminMessages() {
                     setTimeout(() => markMessageAsRead(message._id), 100);
                 }
             }
-            
+
             fetchConversations();
         };
 
         const handleMessageRead = (data) => {
-            console.log('Received message_read event:', data);
             setMessages(prev => {
                 if (selectedConversation && data.conversationId === selectedConversation._id) {
                     return prev.map(m => {
@@ -173,10 +166,8 @@ export default function AdminMessages() {
         socket.on('new_message', handleNewMessage);
         socket.on('message_read', handleMessageRead);
 
-        console.log('Socket listeners registered');
-
         return () => {
-            console.log('Cleaning up socket listeners');
+
             socket.off('new_message', handleNewMessage);
             socket.off('message_read', handleMessageRead);
         };
@@ -239,8 +230,6 @@ export default function AdminMessages() {
                     }
                 }];
             });
-
-            console.log('Message sent - User ID:', user._id || user.id, 'Sender ID in message:', sentMessage.sender);
 
             fetchConversations();
         } catch (error) {
