@@ -413,6 +413,15 @@ export default function Messages() {
                     <div className="divide-y divide-gray-100">
                       {filteredConversations.map(conv => {
                         const other = conv.participants?.find(p => p._id !== user?._id);
+                        const currentUserId = user?._id || user?.id;
+                        const lastMsg = conv.lastMessage;
+                        const lastMsgSenderId = lastMsg?.sender?._id || lastMsg?.sender?.id || lastMsg?.sender;
+                        const isLastMsgFromOther = lastMsgSenderId !== currentUserId;
+                        const isUnread = isLastMsgFromOther && lastMsg && !lastMsg.readBy?.some(r => {
+                          const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                          return readByUserId === currentUserId;
+                        });
+                        
                         return (
                           <button
                             key={conv._id}
@@ -422,10 +431,23 @@ export default function Messages() {
                             <Avatar name={`${other?.firstName} ${other?.lastName}`} size="md" />
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-baseline">
-                                <span className="font-semibold text-gray-900 truncate">{other?.firstName} {other?.lastName}</span>
-                                {conv.lastMessageAt && <span className="text-xs text-gray-500">{formatTime(conv.lastMessageAt)}</span>}
+                                <span className={`truncate ${isUnread ? 'font-bold text-gray-900' : 'font-semibold text-gray-900'}`}>
+                                  {other?.firstName} {other?.lastName}
+                                </span>
+                                {conv.lastMessageAt && (
+                                  <span className={`text-xs flex-shrink-0 ${isUnread ? 'text-primary-600 font-semibold' : 'text-gray-500'}`}>
+                                    {formatTime(conv.lastMessageAt)}
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-sm text-gray-500 truncate mt-0.5">{conv.lastMessage?.content || 'Start a conversation'}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className={`text-sm truncate flex-1 ${isUnread ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                                  {conv.lastMessage?.content || 'Start a conversation'}
+                                </p>
+                                {isUnread && (
+                                  <span className="flex-shrink-0 w-2 h-2 bg-primary-600 rounded-full"></span>
+                                )}
+                              </div>
                             </div>
                           </button>
                         );
