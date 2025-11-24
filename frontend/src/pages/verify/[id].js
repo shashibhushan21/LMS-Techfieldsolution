@@ -12,12 +12,15 @@ export default function VerifyCertificate() {
     const [certificate, setCertificate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchId, setSearchId] = useState('');
 
     useEffect(() => {
         if (!id) return;
 
         const fetchCertificate = async () => {
             try {
+                setLoading(true);
+                setError(null);
                 const response = await apiClient.get(`/certificates/verify/${id}`);
                 setCertificate(response.data.data);
                 setLoading(false);
@@ -30,6 +33,13 @@ export default function VerifyCertificate() {
 
         fetchCertificate();
     }, [id]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchId.trim()) {
+            router.push(`/verify/${searchId.trim()}`);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -60,17 +70,40 @@ export default function VerifyCertificate() {
                             <p className="mt-4 text-gray-500">Verifying certificate...</p>
                         </div>
                     ) : error ? (
-                        <div className="bg-white shadow-lg rounded-lg p-8 text-center border-t-4 border-red-500">
-                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
-                                <FaTimesCircle className="h-10 w-10 text-red-600" />
+                        <div className="bg-white shadow-lg rounded-lg overflow-hidden border-t-4 border-red-500">
+                            <div className="p-8 text-center">
+                                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+                                    <FaTimesCircle className="h-10 w-10 text-red-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid Certificate</h2>
+                                <p className="text-gray-600 mb-6">{error}</p>
+
+                                {/* Search for another certificate */}
+                                <div className="max-w-md mx-auto mb-6">
+                                    <form onSubmit={handleSearch} className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={searchId}
+                                            onChange={(e) => setSearchId(e.target.value)}
+                                            placeholder="Enter certificate ID"
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                        >
+                                            Verify
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div className="text-sm text-gray-500 mb-4">
+                                    <p>If you believe this is an error, please contact our support team.</p>
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid Certificate</h2>
-                            <p className="text-gray-600 mb-6">{error}</p>
-                            <div className="text-sm text-gray-500">
-                                <p>If you believe this is an error, please contact our support team.</p>
-                            </div>
-                            <div className="mt-8">
-                                <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">
+
+                            <div className="bg-gray-50 px-8 py-4 border-t border-gray-200 flex justify-center">
+                                <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium text-sm">
                                     &larr; Return to Home
                                 </Link>
                             </div>

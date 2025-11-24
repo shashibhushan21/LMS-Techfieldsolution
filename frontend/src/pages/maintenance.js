@@ -2,8 +2,49 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { BRAND } from '@/config/brand';
 import { FiTool, FiClock, FiMail, FiTwitter, FiLinkedin } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import apiClient from '@/utils/apiClient';
 
 export default function Maintenance() {
+    const [settings, setSettings] = useState(null);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await apiClient.get('/system/maintenance-status');
+                setSettings(res.data.data);
+            } catch (error) {
+                console.error('Failed to fetch maintenance settings:', error);
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    const getEstimatedDowntime = () => {
+        if (!settings?.maintenanceStartTime || !settings?.maintenanceEndTime) {
+            return '30 minutes';
+        }
+
+        const start = new Date(settings.maintenanceStartTime);
+        const end = new Date(settings.maintenanceEndTime);
+        const diffMs = end - start;
+        const diffMins = Math.round(diffMs / 60000);
+        const diffHours = Math.round(diffMins / 60);
+
+        if (diffMins < 60) {
+            return `${diffMins} minutes`;
+        } else {
+            return `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+        }
+    };
+
+    const getStartTime = () => {
+        if (!settings?.maintenanceStartTime) {
+            return new Date().toLocaleTimeString();
+        }
+        return new Date(settings.maintenanceStartTime).toLocaleString();
+    };
+
     return (
         <>
             <Head>
@@ -28,7 +69,7 @@ export default function Maintenance() {
                         </div>
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">We'll Be Right Back</h1>
                         <p className="text-lg text-gray-600 max-w-md mx-auto">
-                            We're currently performing scheduled maintenance to improve your experience. We'll be back online shortly.
+                            {settings?.maintenanceMessage || "We're currently performing scheduled maintenance to improve your experience. We'll be back online shortly."}
                         </p>
                     </div>
 
@@ -38,9 +79,9 @@ export default function Maintenance() {
                             <FiClock className="w-5 h-5 mr-2 text-blue-600" />
                             <span className="font-semibold">Estimated Downtime</span>
                         </div>
-                        <p className="text-2xl font-bold text-blue-600">30 minutes</p>
+                        <p className="text-2xl font-bold text-blue-600">{getEstimatedDowntime()}</p>
                         <p className="text-sm text-gray-500 mt-2">
-                            Started at {new Date().toLocaleTimeString()}
+                            Started at {getStartTime()}
                         </p>
                     </div>
 

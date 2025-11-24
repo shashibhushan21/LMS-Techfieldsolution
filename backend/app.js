@@ -83,6 +83,8 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/mentors', require('./routes/mentors'));
+app.use('/api/admin/system', require('./routes/system'));
+app.use('/api/system', require('./routes/system'));
 
 // Error handler (must be last)
 app.use(errorHandler);

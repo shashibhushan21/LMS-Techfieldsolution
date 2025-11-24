@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import apiClient from '@/utils/apiClient';
 import { toast } from 'react-toastify';
-import { FiUser, FiLock, FiBell, FiInfo, FiSave } from 'react-icons/fi';
+import { FiUser, FiLock, FiBell, FiInfo, FiSave, FiTool } from 'react-icons/fi';
 import { validatePassword } from '@/utils/validation';
 
 export default function AdminSettings() {
@@ -39,6 +39,13 @@ export default function AdminSettings() {
     systemUpdates: false
   });
 
+  // Maintenance mode
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
+  const [maintenanceStartTime, setMaintenanceStartTime] = useState('');
+  const [maintenanceEndTime, setMaintenanceEndTime] = useState('');
+  const [loadingMaintenance, setLoadingMaintenance] = useState(false);
+
   useEffect(() => {
     if (user) {
       setProfileForm({
@@ -59,6 +66,32 @@ export default function AdminSettings() {
       console.error('Failed to fetch system info:', error);
     }
   };
+
+  const fetchMaintenanceSettings = async () => {
+    try {
+      const res = await apiClient.get('/admin/system/settings');
+      const settings = res.data.data;
+      setMaintenanceMode(settings.maintenanceMode);
+      setMaintenanceMessage(settings.maintenanceMessage || '');
+      setMaintenanceStartTime(settings.maintenanceStartTime ? new Date(settings.maintenanceStartTime).toISOString().slice(0, 16) : '');
+      setMaintenanceEndTime(settings.maintenanceEndTime ? new Date(settings.maintenanceEndTime).toISOString().slice(0, 16) : '');
+    } catch (error) {
+      console.error('Failed to fetch maintenance settings:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      });
+    }
+    fetchSystemInfo();
+    fetchMaintenanceSettings();
+  }, [user]);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -112,10 +145,29 @@ export default function AdminSettings() {
     }
   };
 
+  const handleMaintenanceToggle = async () => {
+    setLoadingMaintenance(true);
+    try {
+      await apiClient.put('/admin/system/maintenance', {
+        maintenanceMode: !maintenanceMode,
+        maintenanceMessage,
+        maintenanceStartTime: maintenanceStartTime || null,
+        maintenanceEndTime: maintenanceEndTime || null
+      });
+      setMaintenanceMode(!maintenanceMode);
+      toast.success(`Maintenance mode ${!maintenanceMode ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      toast.error('Failed to update maintenance mode');
+    } finally {
+      setLoadingMaintenance(false);
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FiUser },
     { id: 'security', label: 'Security', icon: FiLock },
     { id: 'notifications', label: 'Notifications', icon: FiBell },
+    { id: 'maintenance', label: 'Maintenance', icon: FiTool },
     { id: 'system', label: 'System Info', icon: FiInfo }
   ];
 
@@ -389,6 +441,121 @@ export default function AdminSettings() {
                   <div className="pt-4">
                     <Button onClick={handleNotificationUpdate} disabled={loading}>
                       {loading ? 'Saving...' : 'Save Preferences'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Maintenance Tab */}
+        {activeTab === 'maintenance' && (
+          <div className="max-w-2xl">
+            <Card>
+              <CardHeader>
+                <CardTitle>Maintenance Mode</CardTitle>
+                <CardDescription>Control site-wide maintenance mode for non-admin users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Maintenance Mode Toggle */}
+                  <div className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium text-neutral-900 mb-1">Enable Maintenance Mode</p>
+                      <p className="text-sm text-neutral-500">
+                        When enabled, all non-admin users will be redirected to the maintenance page. Admins can still access the full site.
+                      </p>
+                      {maintenanceMode && (
+                        <div className="mt-2 px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full inline-block">
+                          ⚠️ Maintenance Mode Active
+                        </div>
+                      )}
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                      <input
+                        type="checkbox"
+                        checked={maintenanceMode}
+                        onChange={handleMaintenanceToggle}
+                        disabled={loadingMaintenance}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+
+                  {/* Custom Message */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Maintenance Message
+                    </label>
+                    <textarea
+                      value={maintenanceMessage}
+                      onChange={(e) => setMaintenanceMessage(e.target.value)}
+                      rows={3}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="We're currently performing scheduled maintenance..."
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      This message will be displayed on the maintenance page
+                    </p>
+                  </div>
+
+                  {/* Scheduled Downtime */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <h4 className="text-sm font-semibold text-neutral-900 mb-4">Scheduled Downtime (Optional)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Start Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={maintenanceStartTime}
+                          onChange={(e) => setMaintenanceStartTime(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          End Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={maintenanceEndTime}
+                          onChange={(e) => setMaintenanceEndTime(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-2">
+                      Set estimated downtime period to display on the maintenance page
+                    </p>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="pt-2">
+                    <Button
+                      onClick={async () => {
+                        setLoadingMaintenance(true);
+                        try {
+                          await apiClient.put('/admin/system/maintenance', {
+                            maintenanceMode,
+                            maintenanceMessage,
+                            maintenanceStartTime: maintenanceStartTime || null,
+                            maintenanceEndTime: maintenanceEndTime || null
+                          });
+                          toast.success('Maintenance settings updated');
+                        } catch (error) {
+                          toast.error('Failed to update settings');
+                        } finally {
+                          setLoadingMaintenance(false);
+                        }
+                      }}
+                      disabled={loadingMaintenance}
+                    >
+                      <FiSave className="w-4 h-4 mr-2" />
+                      {loadingMaintenance ? 'Saving...' : 'Save Settings'}
                     </Button>
                   </div>
                 </div>
