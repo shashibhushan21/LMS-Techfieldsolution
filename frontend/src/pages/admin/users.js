@@ -4,36 +4,42 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import apiClient from '@/utils/apiClient';
 import RoleBadge from '@/components/admin/RoleBadge';
 import EmptyState from '@/components/admin/EmptyState';
-import Button from '@/components/ui/Button';
-import Avatar from '@/components/ui/Avatar';
-import SectionHeader from '@/components/ui/SectionHeader';
-import { Card, CardContent } from '@/components/ui/Card';
-import { FiSearch, FiUserPlus, FiEdit2, FiTrash2, FiX, FiMoreVertical } from 'react-icons/fi';
+import {
+  Button,
+  Avatar,
+  SectionHeader,
+  Card,
+  CardContent,
+  LoadingSpinner,
+  FormInput,
+  FormSelect,
+  Modal,
+  ResponsiveTable
+} from '@/components/ui';
+import { FiSearch, FiUserPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import UserForm from '@/components/admin/UserForm';
 import { toast } from 'react-toastify';
+import { useApiCall } from '@/hooks/useCommon';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  const load = async () => {
-    try {
-      const res = await apiClient.get('/users');
-      setUsers(res.data.data || []);
-    } catch (err) {
-      console.error('Failed to fetch users', err);
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
+  // Use custom hook for API calls
+  const { data, loading, execute: loadUsers } = useApiCall(
+    () => apiClient.get('/users'),
+    {
+      onSuccess: (response) => setUsers(response.data || []),
+      errorMessage: 'Failed to load users',
+      showErrorToast: true
     }
-  };
+  );
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadUsers(); }, []);
 
   const handleCreate = () => {
     setEditingUser(null);
@@ -50,7 +56,7 @@ export default function AdminUsers() {
     try {
       await apiClient.delete(`/users/${id}`);
       toast.success('User deleted successfully');
-      load();
+      loadUsers();
     } catch (err) {
       console.error('Failed to delete user', err);
       toast.error('Failed to delete user');
@@ -68,7 +74,7 @@ export default function AdminUsers() {
         toast.success('User created successfully');
       }
       setShowModal(false);
-      load();
+      loadUsers();
     } catch (err) {
       console.error('Failed to save user', err);
       toast.error(err.response?.data?.message || 'Failed to save user');
@@ -93,11 +99,72 @@ export default function AdminUsers() {
     interns: users.filter(u => u.role === 'intern').length
   };
 
+  // Table columns configuration
+  const columns = [
+    {
+      header: 'User',
+      accessor: 'name',
+      render: (user) => (
+        <div className="flex items-center gap-3">
+          <Avatar src={user.avatar} name={`${user.firstName} ${user.lastName}`} size="sm" />
+          <div>
+            <div className="font-medium text-neutral-900">{user.firstName} {user.lastName}</div>
+            <div className="text-neutral-500 text-xs">{user.email}</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Role',
+      accessor: 'role',
+      render: (user) => <RoleBadge role={user.role} />
+    },
+    {
+      header: 'Joined',
+      accessor: 'createdAt',
+      render: (user) => (
+        <span className="text-neutral-600">
+          {new Date(user.createdAt).toLocaleDateString()}
+        </span>
+      )
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (user) => (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => handleEdit(user)}
+            className="p-2 text-neutral-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+            title="Edit User"
+          >
+            <FiEdit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(user._id)}
+            className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete User"
+          >
+            <FiTrash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    }
+  ];
+
+  const roleOptions = [
+    { value: '', label: 'All Roles' },
+    { value: 'admin', label: 'Admins' },
+    { value: 'mentor', label: 'Mentors' },
+    { value: 'intern', label: 'Interns' }
+  ];
+
   return (
     <>
       <Head><title>Admin Users</title></Head>
       <AdminLayout>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Header */}
+        <div className="flex-between flex-col sm:flex-row gap-4">
           <SectionHeader title="Users" subtitle="Manage platform users" />
           <Button onClick={handleCreate}>
             <FiUserPlus className="w-4 h-4 mr-2" /> Add User
@@ -125,34 +192,36 @@ export default function AdminUsers() {
         <Card className="mt-6 shadow-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="input w-full pl-10"
-                />
-              </div>
+              <FormInput
+                name="search"
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                icon={FiSearch}
+                className="flex-1"
+              />
               <div className="flex gap-2">
-                <select value={filter} onChange={e => setFilter(e.target.value)} className="input w-40">
-                  <option value="">All Roles</option>
-                  <option value="admin">Admins</option>
-                  <option value="mentor">Mentors</option>
-                  <option value="intern">Interns</option>
-                </select>
+                <FormSelect
+                  name="role"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  options={roleOptions}
+                  className="w-40"
+                />
                 {(filter || searchTerm) && (
-                  <Button variant="outline" onClick={() => { setFilter(''); setSearchTerm(''); }}>Reset</Button>
+                  <Button variant="outline" onClick={() => { setFilter(''); setSearchTerm(''); }}>
+                    Reset
+                  </Button>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Users Table */}
         {loading ? (
-          <div className="flex items-center justify-center py-12 mt-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+          <div className="mt-6">
+            <LoadingSpinner size="lg" />
           </div>
         ) : filtered.length === 0 ? (
           <Card className="mt-6">
@@ -164,84 +233,28 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
         ) : (
-          <div className="mt-6 overflow-hidden bg-white border border-neutral-200 rounded-xl shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-neutral-50 text-neutral-700 border-b border-neutral-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-semibold">User</th>
-                    <th className="px-6 py-3 text-left font-semibold">Role</th>
-                    <th className="px-6 py-3 text-left font-semibold">Joined</th>
-                    <th className="px-6 py-3 text-right font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {filtered.map(u => (
-                    <tr key={u._id} className="hover:bg-neutral-50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar src={u.avatar} name={`${u.firstName} ${u.lastName}`} size="sm" />
-                          <div>
-                            <div className="font-medium text-neutral-900">{u.firstName} {u.lastName}</div>
-                            <div className="text-neutral-500 text-xs">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4"><RoleBadge role={u.role} /></td>
-                      <td className="px-6 py-4 text-neutral-600">{new Date(u.createdAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEdit(u)}
-                            className="p-2 text-neutral-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                            title="Edit User"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u._id)}
-                            className="p-2 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete User"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="mt-6">
+            <ResponsiveTable
+              columns={columns}
+              data={filtered}
+              emptyMessage="No users found"
+            />
           </div>
         )}
 
         {/* Add/Edit User Modal */}
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl border border-neutral-200 animate-scale-up max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 sticky top-0 bg-white z-10">
-                <h2 className="text-lg font-semibold text-neutral-900">
-                  {editingUser ? 'Edit User' : 'Add New User'}
-                </h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700"
-                  aria-label="Close"
-                >
-                  <FiX className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-6">
-                <UserForm
-                  initialData={editingUser}
-                  onSubmit={handleFormSubmit}
-                  loading={formLoading}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingUser ? 'Edit User' : 'Add New User'}
+          size="lg"
+        >
+          <UserForm
+            initialData={editingUser}
+            onSubmit={handleFormSubmit}
+            loading={formLoading}
+          />
+        </Modal>
       </AdminLayout>
     </>
   );

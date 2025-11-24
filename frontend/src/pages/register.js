@@ -6,40 +6,56 @@ import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-toastify';
 import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiPhone } from 'react-icons/fi';
 import { validatePassword } from '@/utils/validation';
+import { FormInput, FormSelect, Button } from '@/components/ui';
+import { useFormValidation } from '@/hooks/useCommon';
 
 export default function Register() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    role: 'intern',
-  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const router = useRouter();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const validation = (values) => {
+    const errors = {};
+    if (!values.name?.trim()) errors.name = 'Name is required';
+    if (!values.email?.trim()) errors.email = 'Email is required';
+    if (!values.password) errors.password = 'Password is required';
+    if (values.password && values.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    if (values.password !== values.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    return errors;
   };
+
+  const {
+    values: formData,
+    errors,
+    handleChange,
+    validate
+  } = useFormValidation(
+    {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      role: 'intern',
+    },
+    validation
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate password
-    const passwordValidation = validatePassword(formData.password, formData.confirmPassword);
-    if (!passwordValidation.valid) {
-      toast.error(passwordValidation.error);
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
 
     const { confirmPassword, ...userData } = formData;
-    const result = await register(userData);
+    const result = await registerUser(userData);
 
     if (result.success) {
       toast.success('Registration successful!');
@@ -51,13 +67,18 @@ export default function Register() {
     setLoading(false);
   };
 
+  const roleOptions = [
+    { value: 'intern', label: 'Intern' },
+    { value: 'mentor', label: 'Mentor' }
+  ];
+
   return (
     <>
       <Head>
         <title>Register - TechFieldSolution LMS</title>
       </Head>
 
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-4xl font-heading font-extrabold text-gray-900">
@@ -73,160 +94,99 @@ export default function Register() {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="label">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiUser className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="input pl-10"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
+              <FormInput
+                label="Full Name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                error={errors.name}
+                icon={FiUser}
+                placeholder="John Doe"
+                required
+              />
+
+              <FormInput
+                label="Email address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={errors.email}
+                icon={FiMail}
+                placeholder="you@example.com"
+                required
+              />
+
+              <FormInput
+                label="Phone Number (Optional)"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                icon={FiPhone}
+                placeholder="+1 (555) 123-4567"
+              />
 
               <div>
-                <label htmlFor="email" className="label">
-                  Email address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="input pl-10"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="label">
-                  Phone Number (Optional)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiPhone className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="input pl-10"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className="label">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="input pl-10 pr-10"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <FiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <FiEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="label">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="input pl-10 pr-10"
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <FiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                      <FiEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="role" className="label">
-                  I want to register as
-                </label>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
+                <FormInput
+                  label="Password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
                   onChange={handleChange}
-                  className="input"
+                  error={errors.password}
+                  icon={FiLock}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
                 >
-                  <option value="intern">Intern</option>
-                  <option value="mentor">Mentor</option>
-                </select>
+                  {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                </button>
               </div>
+
+              <div className="relative">
+                <FormInput
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  error={errors.confirmPassword}
+                  icon={FiLock}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+                </button>
+              </div>
+
+              <FormSelect
+                label="I want to register as"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                options={roleOptions}
+              />
             </div>
 
             <div>
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary w-full"
+                className="w-full"
               >
                 {loading ? 'Creating account...' : 'Create account'}
-              </button>
+              </Button>
             </div>
 
             <div className="text-xs text-gray-500 text-center">

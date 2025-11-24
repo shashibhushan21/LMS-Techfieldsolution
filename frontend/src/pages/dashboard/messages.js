@@ -5,7 +5,6 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
 import apiClient from '@/utils/apiClient';
-import Avatar from '@/components/ui/Avatar';
 import Navbar from '@/components/layout/Navbar';
 import { toast } from 'react-toastify';
 import {
@@ -13,6 +12,14 @@ import {
   FiUsers, FiBarChart2, FiSettings, FiCheckCircle, FiMenu, FiX,
   FiSend, FiSearch, FiPlus, FiMoreVertical, FiArrowLeft, FiCheck
 } from 'react-icons/fi';
+import {
+  Avatar,
+  LoadingSpinner,
+  Modal,
+  Button,
+  FormInput,
+  Badge
+} from '@/components/ui';
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
@@ -92,11 +99,9 @@ export default function Messages() {
     }
   }, [messages, selectedConversation]);
 
-  // Define markMessageAsRead before it's used in other hooks
   const markMessageAsRead = useCallback(async (messageId) => {
     try {
       await apiClient.put(`/conversations/messages/${messageId}/read`);
-      // Emit socket event to notify sender
       if (socket && selectedConversation) {
         socket.emit('mark_read', {
           conversationId: selectedConversation._id,
@@ -128,7 +133,6 @@ export default function Messages() {
       setMessages(fetchedMessages);
       if (socket) socket.emit('join_conversation', conversationId);
 
-      // Mark unread messages as read
       const currentUserId = user?._id || user?.id;
       fetchedMessages.forEach(msg => {
         const senderIds = msg.sender?._id || msg.sender?.id || msg.sender;
@@ -142,32 +146,19 @@ export default function Messages() {
   };
 
   useEffect(() => {
-    if (!socket) {
-      console.log('Socket not available yet');
-      return;
-    }
-
-    console.log('Setting up socket listeners...');
+    if (!socket) return;
 
     const handleNewMessage = (message) => {
-      console.log('Received new_message event:', message);
       const msgConvId = message.conversation || message.conversationId;
 
-      // Update messages if in current conversation
       setMessages((prev) => {
         if (selectedConversation && msgConvId === selectedConversation._id) {
-          // Avoid duplicates
-          if (prev.some(m => m._id === message._id)) {
-            console.log('Duplicate message, skipping');
-            return prev;
-          }
-          console.log('Adding new message to state');
+          if (prev.some(m => m._id === message._id)) return prev;
           return [...prev, message];
         }
         return prev;
       });
 
-      // Mark as read if in current conversation and from another user
       if (selectedConversation && msgConvId === selectedConversation._id) {
         const currentUserId = user?._id || user?.id;
         const messageSenderId = message.sender?._id || message.sender?.id || message.sender;
@@ -176,12 +167,10 @@ export default function Messages() {
         }
       }
 
-      // Always refresh conversation list
       fetchConversations();
     };
 
     const handleMessageRead = (data) => {
-      console.log('Received message_read event:', data);
       setMessages(prev => {
         if (selectedConversation && data.conversationId === selectedConversation._id) {
           return prev.map(m => {
@@ -203,10 +192,7 @@ export default function Messages() {
     socket.on('new_message', handleNewMessage);
     socket.on('message_read', handleMessageRead);
 
-    console.log('Socket listeners registered');
-
     return () => {
-      console.log('Cleaning up socket listeners');
       socket.off('new_message', handleNewMessage);
       socket.off('message_read', handleMessageRead);
     };
@@ -229,7 +215,7 @@ export default function Messages() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     const messageContent = newMessage.trim();
-    setNewMessage(''); // Clear input immediately for better UX
+    setNewMessage('');
 
     try {
       const response = await apiClient.post(`/conversations/${selectedConversation._id}/messages`, {
@@ -238,12 +224,11 @@ export default function Messages() {
 
       const sentMessage = response.data.message;
 
-      // Emit socket event with proper structure
       if (socket) {
         socket.emit('send_message', {
           ...sentMessage,
           conversationId: selectedConversation._id,
-          conversation: selectedConversation._id, // Add both for compatibility
+          conversation: selectedConversation._id,
           sender: {
             _id: user._id || user.id,
             id: user.id || user._id,
@@ -254,9 +239,7 @@ export default function Messages() {
         });
       }
 
-      // Update local state (the socket event will also trigger, but this ensures immediate update)
       setMessages(prev => {
-        // Avoid duplicates
         if (prev.some(m => m._id === sentMessage._id)) return prev;
         return [...prev, {
           ...sentMessage,
@@ -270,13 +253,11 @@ export default function Messages() {
         }];
       });
 
-      console.log('Message sent - User ID:', user._id || user.id, 'Sender ID in message:', sentMessage.sender);
-
       fetchConversations();
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error('Failed to send message');
-      setNewMessage(messageContent); // Restore message on error
+      setNewMessage(messageContent);
     }
   };
 
@@ -339,13 +320,12 @@ export default function Messages() {
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
-  if (authLoading || loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div></div>;
+  if (authLoading || loading) return <div className="flex-center h-screen"><LoadingSpinner size="lg" /></div>;
 
   return (
     <>
       <Head><title>Messages - Dashboard</title></Head>
 
-      {/* Main Layout - H-SCREEN & OVERFLOW-HIDDEN */}
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
         <Navbar />
 
@@ -382,16 +362,13 @@ export default function Messages() {
             </div>
           )}
 
-          {/* Mobile Sidebar Toggle (Floating) - Only show if not in chat view on mobile */}
           {!selectedConversation && (
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden fixed bottom-6 right-6 z-30 bg-primary-600 text-white p-4 rounded-full shadow-lg hover:bg-primary-700 transition-transform hover:scale-105">
               <FiMenu className="w-6 h-6" />
             </button>
           )}
 
-          {/* Chat Interface */}
           <main className="flex-1 flex flex-col h-full overflow-hidden bg-white relative">
-
             <div className="flex-1 flex overflow-hidden">
 
               {/* Conversation List */}
@@ -399,9 +376,13 @@ export default function Messages() {
                 <div className="p-4 bg-white border-b border-gray-200 shrink-0">
                   <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-                    <button onClick={() => { setShowNewChatModal(true); fetchContacts(); }} className="p-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
+                    <Button
+                      size="sm"
+                      onClick={() => { setShowNewChatModal(true); fetchContacts(); }}
+                      className="!p-2"
+                    >
                       <FiPlus className="w-5 h-5" />
-                    </button>
+                    </Button>
                   </div>
                   <div className="relative">
                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -474,7 +455,6 @@ export default function Messages() {
 
                     <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-4" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                       {messages.map((msg, i) => {
-                        // Check both _id and id for compatibility
                         const currentUserId = user?._id || user?.id;
                         const messageSenderId = msg.sender?._id || msg.sender?.id || msg.sender;
                         const isOwn = messageSenderId === currentUserId;
@@ -524,71 +504,68 @@ export default function Messages() {
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Your Messages</h3>
                     <p className="text-sm">Select a conversation to start chatting</p>
-                    <button onClick={() => { setShowNewChatModal(true); fetchContacts(); }} className="mt-6 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                    <Button
+                      onClick={() => { setShowNewChatModal(true); fetchContacts(); }}
+                      className="mt-6"
+                    >
                       Start New Chat
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
           </main>
 
-          {/* New Chat Modal */}
-          {showNewChatModal && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowNewChatModal(false)} />
-              <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                  <h3 className="font-bold text-lg">New Message</h3>
-                  <button onClick={() => setShowNewChatModal(false)} className="p-1 hover:bg-gray-200 rounded-full"><FiX className="w-5 h-5" /></button>
-                </div>
-                <div className="p-3 border-b border-gray-100">
-                  <div className="relative">
-                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      autoFocus
-                      type="text"
-                      placeholder="Search users..."
-                      value={contactSearch}
-                      onChange={e => setContactSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2">
-                  {loadingContacts ? (
-                    <div className="py-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div></div>
-                  ) : (
-                    <div className="space-y-4 p-2">
-                      {['admins', 'mentors', 'interns'].map(role => {
-                        const list = filterContacts(contacts[role]);
-                        if (!list?.length) return null;
-                        return (
-                          <div key={role}>
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">{role}</h4>
-                            <div className="space-y-1">
-                              {list.map(c => (
-                                <button key={c._id} onClick={() => handleStartChat(c._id)} className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors text-left">
-                                  <Avatar name={`${c.firstName} ${c.lastName}`} size="sm" />
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900">{c.firstName} {c.lastName}</p>
-                                    <p className="text-xs text-gray-500 capitalize">{role.slice(0, -1)}</p>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {Object.values(contacts).every(l => filterContacts(l).length === 0) && (
-                        <p className="text-center text-gray-500 py-4 text-sm">No users found</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+          <Modal
+            isOpen={showNewChatModal}
+            onClose={() => setShowNewChatModal(false)}
+            title="New Message"
+          >
+            <div className="p-3 border-b border-gray-100">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search users..."
+                  value={contactSearch}
+                  onChange={e => setContactSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                />
               </div>
             </div>
-          )}
+            <div className="flex-1 overflow-y-auto p-2 max-h-[60vh]">
+              {loadingContacts ? (
+                <div className="py-8 flex justify-center"><LoadingSpinner /></div>
+              ) : (
+                <div className="space-y-4 p-2">
+                  {['admins', 'mentors', 'interns'].map(role => {
+                    const list = filterContacts(contacts[role]);
+                    if (!list?.length) return null;
+                    return (
+                      <div key={role}>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">{role}</h4>
+                        <div className="space-y-1">
+                          {list.map(c => (
+                            <button key={c._id} onClick={() => handleStartChat(c._id)} className="w-full flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors text-left">
+                              <Avatar name={`${c.firstName} ${c.lastName}`} size="sm" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{c.firstName} {c.lastName}</p>
+                                <p className="text-xs text-gray-500 capitalize">{role.slice(0, -1)}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {Object.values(contacts).every(l => filterContacts(l).length === 0) && (
+                    <p className="text-center text-gray-500 py-4 text-sm">No users found</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </Modal>
         </div>
       </div>
     </>
