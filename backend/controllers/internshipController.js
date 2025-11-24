@@ -109,11 +109,18 @@ exports.getInternship = async (req, res, next) => {
       }
     }
 
+    // Calculate enrollment count
+    const enrollmentCount = await Enrollment.countDocuments({
+      internship: req.params.id,
+      status: { $in: ['active', 'completed', 'approved'] }
+    });
+
     res.status(200).json({
       success: true,
       data: {
         ...internship.toJSON(),
-        modules
+        modules,
+        enrollmentCount
       }
     });
   } catch (error) {
