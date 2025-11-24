@@ -73,55 +73,122 @@ export default function DashboardLayout({ children }) {
 
   const navItems = getNavItems();
 
-  const SidebarContent = ({ onItemClick = () => { } }) => (
-    <nav className="flex-1 p-4 space-y-1">
-      {navItems.map((item) => {
-        const isActive = router.pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onItemClick}
-            className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-              ? 'bg-primary-600 text-white shadow-md'
-              : 'text-gray-700 hover:bg-gray-100'
-              }`}
-          >
-            <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-primary-600'}`} />
-            <span className="font-medium">{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
       <div className="flex flex-1 relative">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col w-72 bg-white border-r border-gray-200 sticky top-16 h-[calc(100vh-64px)] shadow-sm">
-          <SidebarContent />
+        <aside className="hidden lg:flex lg:flex-col w-72 bg-slate-900 text-white sticky top-16 h-[calc(100vh-64px)] shadow-xl overflow-y-auto">
+          <div className="p-6 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg">
+                <span className="font-bold text-white text-xl">
+                  {user.role === 'mentor' ? 'M' : user.role === 'admin' ? 'A' : 'I'}
+                </span>
+              </div>
+              <div>
+                <h1 className="font-bold text-lg tracking-tight">
+                  {user.role === 'mentor' ? 'Mentor Portal' : user.role === 'admin' ? 'Admin Portal' : 'Dashboard'}
+                </h1>
+                <p className="text-xs text-slate-400">
+                  {user.role === 'mentor' ? 'Manage your students' : user.role === 'admin' ? 'Manage platform' : 'Track your progress'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-1">
+            <p className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Menu</p>
+            {navItems.map((item) => {
+              const isActive = router.pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group text-sm font-medium ${isActive
+                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/20'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`}
+                >
+                  <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="p-4 border-t border-slate-800">
+            <div className="bg-slate-800/50 rounded-xl p-4 flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold">
+                {user.firstName?.[0] || 'U'}
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium text-white truncate">{user.firstName} {user.lastName}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            >
+              <FiSettings className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
         </aside>
 
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)}>
             <div
-              className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl flex flex-col animate-slide-in-left"
+              className="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 text-white shadow-2xl flex flex-col animate-slide-in-left"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900">Menu</h2>
+              <div className="flex items-center justify-between p-6 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
+                    <span className="font-bold text-white">
+                      {user.role === 'mentor' ? 'M' : user.role === 'admin' ? 'A' : 'I'}
+                    </span>
+                  </div>
+                  <span className="font-bold text-lg">
+                    {user.role === 'mentor' ? 'Mentor' : user.role === 'admin' ? 'Admin' : 'Dashboard'}
+                  </span>
+                </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+                  className="text-slate-400 hover:text-white"
                 >
                   <FiX className="w-5 h-5" />
                 </button>
               </div>
-              <SidebarContent onItemClick={() => setSidebarOpen(false)} />
+              <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                {navItems.map((item) => {
+                  const isActive = router.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors text-sm font-medium ${isActive
+                        ? 'bg-primary-600 text-white'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                        }`}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <div className="p-4 border-t border-slate-800">
+                <button
+                  onClick={() => { logout(); setSidebarOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                >
+                  <FiSettings className="w-5 h-5" /> Sign Out
+                </button>
+              </div>
             </div>
           </div>
         )}

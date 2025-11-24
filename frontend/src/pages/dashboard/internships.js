@@ -21,7 +21,7 @@ export default function MyInternships() {
   const router = useRouter();
 
   const { data: enrollments, loading, execute: fetchEnrollments } = useApiCall(
-    () => apiClient.get('/enrollments/my-enrollments'),
+    () => apiClient.get('/enrollments/my-enrollments').then(res => ({ data: res.data.data || [] })),
     {
       initialData: [],
       errorMessage: 'Failed to fetch enrollments'
@@ -101,7 +101,7 @@ export default function MyInternships() {
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <FiAward className="w-4 h-4 text-primary-500" />
-                            <span>Level: {enrollment.internship?.level || 'N/A'}</span>
+                            <span>Level: {enrollment.internship?.skillLevel || 'N/A'}</span>
                           </div>
                         </div>
 
@@ -111,7 +111,7 @@ export default function MyInternships() {
                               <span className="font-medium text-gray-700">Overall Progress</span>
                               <span className="font-medium text-primary-600">{enrollment.progressPercentage}%</span>
                             </div>
-                            <ProgressBar progress={enrollment.progressPercentage} />
+                            <ProgressBar value={enrollment.progressPercentage} />
                           </div>
                         )}
                       </div>

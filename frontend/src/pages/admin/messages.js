@@ -120,9 +120,7 @@ export default function AdminMessages() {
     };
 
     useEffect(() => {
-
-
-
+        if (!socket) return;
 
         const handleNewMessage = (message) => {
             const msgConvId = message.conversation || message.conversationId;
@@ -174,7 +172,6 @@ export default function AdminMessages() {
         socket.on('message_read', handleMessageRead);
 
         return () => {
-
             socket.off('new_message', handleNewMessage);
             socket.off('message_read', handleMessageRead);
         };
