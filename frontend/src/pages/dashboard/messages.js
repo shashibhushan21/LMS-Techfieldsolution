@@ -75,6 +75,8 @@ export default function Messages() {
         { href: '/mentor/submissions', icon: FiFileText, label: 'Submissions' },
         { href: '/mentor/students', icon: FiUsers, label: 'Students' },
         { href: '/dashboard/messages', icon: FiMessageSquare, label: 'Messages' },
+        { href: '/dashboard/notifications', icon: FiBell, label: 'Notifications' },
+        { href: '/dashboard/profile', icon: FiSettings, label: 'Settings' },
       ];
     }
 

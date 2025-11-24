@@ -22,7 +22,7 @@ export default function MentorStudents() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: students, loading, execute: fetchStudents } = useApiCall(
-    () => apiClient.get('/mentors/students'),
+    () => apiClient.get('/mentors/students').then(res => ({ data: res.data.data || [] })),
     {
       initialData: [],
       errorMessage: 'Failed to fetch students'

@@ -25,7 +25,7 @@ export default function Notifications() {
   const { data: notifications, loading, execute: fetchNotifications, setData: setNotifications } = useApiCall(
     () => {
       const params = filter !== 'all' ? `?status=${filter}` : '';
-      return apiClient.get(`/notifications${params}`);
+      return apiClient.get(`/notifications${params}`).then(res => ({ data: res.data.data || [] }));
     },
     {
       initialData: [],

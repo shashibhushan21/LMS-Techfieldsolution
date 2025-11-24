@@ -24,7 +24,7 @@ export default function MentorSubmissions() {
   const { data: submissions, loading, execute: fetchSubmissions } = useApiCall(
     () => {
       const params = filter !== 'all' ? `?status=${filter}` : '';
-      return apiClient.get(`/mentors/submissions${params}`);
+      return apiClient.get(`/mentors/submissions${params}`).then(res => ({ data: res.data.data || [] }));
     },
     {
       initialData: [],

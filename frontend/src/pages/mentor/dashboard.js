@@ -23,7 +23,7 @@ export default function MentorDashboard() {
   const router = useRouter();
 
   const { data: dashboardData, loading, execute: fetchDashboardData } = useApiCall(
-    () => apiClient.get('/mentors/dashboard'),
+    () => apiClient.get('/mentors/dashboard').then(res => ({ data: res.data.data })),
     {
       initialData: null,
       errorMessage: 'Failed to fetch dashboard data'
