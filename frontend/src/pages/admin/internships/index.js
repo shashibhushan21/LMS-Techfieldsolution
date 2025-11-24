@@ -130,8 +130,8 @@ export default function InternshipList() {
                 ) : filteredInternships.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredInternships.map((internship) => (
-                            <Card key={internship._id} className="card-hover overflow-hidden">
-                                <CardContent className="p-6">
+                            <Card key={internship._id} className="card-hover overflow-hidden flex flex-col h-full">
+                                <CardContent className="p-6 flex-1 flex flex-col">
                                     <div className="flex-between items-start mb-4">
                                         <Badge variant={getStatusVariant(internship.status)}>
                                             {internship.status.charAt(0).toUpperCase() + internship.status.slice(1)}
@@ -172,7 +172,7 @@ export default function InternshipList() {
                                         {internship.description}
                                     </p>
 
-                                    <div className="space-y-2 text-sm text-gray-600">
+                                    <div className="space-y-2 text-sm text-gray-600 mt-auto">
                                         <div className="flex items-center">
                                             <FiUsers className="mr-2 h-4 w-4 text-gray-400" />
                                             <span>{internship.currentEnrollments || 0} Enrolled</span>
@@ -185,7 +185,7 @@ export default function InternshipList() {
                                         </div>
                                     </div>
                                 </CardContent>
-                                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 mt-auto">
                                     <Link
                                         href={`/admin/internships/${internship._id}/curriculum`}
                                         className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline"
