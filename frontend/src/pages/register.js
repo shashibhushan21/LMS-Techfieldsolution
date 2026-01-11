@@ -18,7 +18,8 @@ export default function Register() {
 
   const validation = (values) => {
     const errors = {};
-    if (!values.name?.trim()) errors.name = 'Name is required';
+    if (!values.firstName?.trim()) errors.firstName = 'First name is required';
+    if (!values.lastName?.trim()) errors.lastName = 'Last name is required';
     if (!values.email?.trim()) errors.email = 'Email is required';
     if (!values.password) errors.password = 'Password is required';
     if (values.password && values.password.length < 6) {
@@ -37,7 +38,8 @@ export default function Register() {
     validate
   } = useFormValidation(
     {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -95,14 +97,26 @@ export default function Register() {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <FormInput
-                label="Full Name"
-                name="name"
+                label="First Name"
+                name="firstName"
                 type="text"
-                value={formData.name}
+                value={formData.firstName}
                 onChange={handleChange}
-                error={errors.name}
+                error={errors.firstName}
                 icon={FiUser}
-                placeholder="John Doe"
+                placeholder="John"
+                required
+              />
+
+              <FormInput
+                label="Last Name"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                error={errors.lastName}
+                icon={FiUser}
+                placeholder="Doe"
                 required
               />
 

@@ -21,7 +21,7 @@ const sizes = {
   lg: 'h-12 px-6 text-base',
 };
 
-export const Button = forwardRef(function Button(
+const Button = forwardRef(function Button(
   { className, variant = 'primary', size = 'md', href, children, ...props },
   ref
 ) {
@@ -41,5 +41,7 @@ export const Button = forwardRef(function Button(
     </button>
   );
 });
+
+Button.displayName = 'Button';
 
 export default Button;
