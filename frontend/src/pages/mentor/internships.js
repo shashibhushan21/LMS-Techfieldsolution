@@ -5,12 +5,24 @@ import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import apiClient from '@/utils/apiClient';
 import { FiUsers, FiFileText, FiCalendar } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function MentorInternships() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [internships, setInternships] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: internships,
+    loading,
+    execute: fetchInternships
+  } = useApiCall(
+    () => apiClient.get('/mentors/my-internships').then(res => ({ data: res.data.data || [] })),
+    {
+      initialData: [],
+      errorMessage: 'Failed to load internships'
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -24,23 +36,11 @@ export default function MentorInternships() {
     }
   }, [user, authLoading]);
 
-  const fetchInternships = async () => {
-    try {
-      const response = await apiClient.get('/mentors/my-internships');
-      setInternships(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch internships:', error);
-      setInternships([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (authLoading || loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -65,7 +65,7 @@ export default function MentorInternships() {
                 <div key={internship._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <h3 className="text-base font-semibold text-gray-900 mb-2">{internship.title}</h3>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">{internship.description}</p>
-                  
+
                   <div className="space-y-1.5 text-xs text-gray-500">
                     <div className="flex items-center gap-2">
                       <FiUsers className="w-3.5 h-3.5" />

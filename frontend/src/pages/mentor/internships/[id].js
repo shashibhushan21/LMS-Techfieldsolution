@@ -6,14 +6,35 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import InternshipCurriculumManager from '@/components/admin/InternshipCurriculumManager';
 import apiClient from '@/utils/apiClient';
 import { FiBook, FiFileText, FiUsers } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function MentorInternshipDetails() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
-  
+
   const [internship, setInternship] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: internshipData,
+    loading,
+    execute: fetchInternship
+  } = useApiCall(
+    () => apiClient.get(`/mentors/internships/${id}`).then(res => ({ data: res.data.data.internship })),
+    {
+      initialData: null,
+      errorMessage: 'Failed to load internship',
+      onError: (error) => {
+        if (error.response?.status === 403) {
+          router.push('/mentor/internships');
+        }
+      },
+      onSuccess: (data) => {
+        setInternship(data);
+      }
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -27,20 +48,6 @@ export default function MentorInternshipDetails() {
     }
   }, [user, authLoading, id]);
 
-  const fetchInternship = async () => {
-    try {
-      const response = await apiClient.get(`/mentors/internships/${id}`);
-      setInternship(response.data.data.internship);
-    } catch (error) {
-      console.error('Failed to fetch internship:', error);
-      if (error.response?.status === 403) {
-        router.push('/mentor/internships');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDataUpdate = (updatedData) => {
     if (updatedData && updatedData.internship) {
       setInternship(updatedData.internship);
@@ -50,8 +57,8 @@ export default function MentorInternshipDetails() {
   if (authLoading || loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -102,7 +109,7 @@ export default function MentorInternshipDetails() {
           </div>
 
           {/* Curriculum Manager */}
-          <InternshipCurriculumManager 
+          <InternshipCurriculumManager
             internshipId={id}
             role="mentor"
             canEdit={true}

@@ -6,12 +6,45 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import StatsCard from '@/components/dashboard/StatsCard';
 import apiClient from '@/utils/apiClient';
 import { FiUsers, FiBookOpen, FiFileText, FiTrendingUp, FiUserCheck } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: dashboardData,
+    loading,
+    execute: fetchDashboardData
+  } = useApiCall(
+    () => apiClient.get('/analytics/dashboard/admin').then(response => {
+      const data = response.data.data;
+      return {
+        data: {
+          stats: {
+            totalUsers: data.overview?.totalUsers || 0,
+            totalInterns: data.overview?.totalInterns || 0,
+            totalMentors: data.overview?.totalMentors || 0,
+            totalInternships: data.overview?.totalInternships || 0,
+            activeInternships: data.overview?.activeEnrollments || 0,
+            totalEnrollments: data.overview?.totalEnrollments || 0
+          },
+          recentStats: {
+            newUsers: data.recent?.enrollmentsLast30Days || 0,
+            newEnrollments: data.recent?.enrollmentsLast30Days || 0
+          },
+          popularInternships: data.popularInternships || [],
+          recentEnrollments: data.recentEnrollments || [],
+          recentSubmissions: data.recentSubmissions || []
+        }
+      };
+    }),
+    {
+      initialData: null,
+      errorMessage: 'Failed to fetch dashboard data'
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -25,53 +58,11 @@ export default function AdminDashboard() {
     }
   }, [user, authLoading]);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get('/analytics/dashboard/admin');
-      console.log('Admin dashboard response:', response.data);
-
-      const data = response.data.data;
-
-      // Transform the data to match our component structure
-      setDashboardData({
-        stats: {
-          totalUsers: data.overview?.totalUsers || 0,
-          totalInterns: data.overview?.totalInterns || 0,
-          totalMentors: data.overview?.totalMentors || 0,
-          totalInternships: data.overview?.totalInternships || 0,
-          activeInternships: data.overview?.activeEnrollments || 0,
-          totalEnrollments: data.overview?.totalEnrollments || 0
-        },
-        recentStats: {
-          newUsers: data.recent?.enrollmentsLast30Days || 0,
-          newEnrollments: data.recent?.enrollmentsLast30Days || 0
-        },
-        popularInternships: data.popularInternships || [],
-        recentEnrollments: data.recentEnrollments || [],
-        recentSubmissions: data.recentSubmissions || []
-      });
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      console.error('Error details:', error.response?.data);
-      // Set minimal fallback data to prevent "Failed to load" message
-      setDashboardData({
-        stats: { totalUsers: 0, totalInterns: 0, totalMentors: 0, totalInternships: 0, activeInternships: 0, totalEnrollments: 0 },
-        recentStats: { newUsers: 0, newEnrollments: 0 },
-        popularInternships: [],
-        recentEnrollments: [],
-        recentSubmissions: []
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (authLoading || loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </AdminLayout>
     );

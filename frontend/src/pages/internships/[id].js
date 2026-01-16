@@ -157,10 +157,12 @@ export default function InternshipDetail() {
                   <FiBookOpen className="w-5 h-5 mr-2" />
                   <span>{modules.length} modules</span>
                 </div>
-                <div className="flex items-center">
-                  <FiUsers className="w-5 h-5 mr-2" />
-                  <span>{internship.enrollmentCount || 0} enrolled</span>
-                </div>
+                {user?.role !== 'intern' && (
+                  <div className="flex items-center">
+                    <FiUsers className="w-5 h-5 mr-2" />
+                    <span>{internship.enrollmentCount || 0} enrolled</span>
+                  </div>
+                )}
                 {internship.startDate && (
                   <div className="flex items-center">
                     <FiCalendar className="w-5 h-5 mr-2" />

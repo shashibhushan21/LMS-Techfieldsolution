@@ -6,16 +6,31 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import apiClient from '@/utils/apiClient';
 import { toast } from 'react-toastify';
 import {
+  Card,
+  CardContent,
+  LoadingSpinner,
+  Badge
+} from '@/components/ui';
+import {
   FiFilter, FiClock, FiCheckCircle, FiAlertCircle, FiFileText,
   FiCalendar, FiAward, FiChevronRight
 } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
 
 export default function MyAssignments() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [assignments, setAssignments] = useState([]);
   const [filter, setFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
+
+  const { loading, execute: fetchAssignments } = useApiCall(
+    () => apiClient.get('/assignments/my-assignments'),
+    {
+      onSuccess: (response) => setAssignments(response.data || []),
+      errorMessage: 'Failed to load assignments',
+      showErrorToast: true
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -27,47 +42,17 @@ export default function MyAssignments() {
     }
   }, [user, authLoading]);
 
-  const fetchAssignments = async () => {
-    try {
-      const response = await apiClient.get('/assignments/my-assignments');
-      setAssignments(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch assignments:', error);
-      toast.error('Failed to load assignments');
-      setAssignments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getStatusBadge = (assignment) => {
     const { submissionStatus } = assignment;
 
-    // Only show graded if the submission status is explicitly 'graded'
     if (submissionStatus === 'graded') {
-      return {
-        text: 'Graded',
-        className: 'bg-green-100 text-green-800',
-        icon: FiCheckCircle
-      };
+      return { text: 'Graded', variant: 'success', icon: FiCheckCircle };
     } else if (submissionStatus === 'submitted' || submissionStatus === 'pending') {
-      return {
-        text: 'Submitted',
-        className: 'bg-blue-100 text-blue-800',
-        icon: FiCheckCircle
-      };
+      return { text: 'Submitted', variant: 'info', icon: FiCheckCircle };
     } else if (new Date(assignment.dueDate) < new Date()) {
-      return {
-        text: 'Overdue',
-        className: 'bg-red-100 text-red-800',
-        icon: FiAlertCircle
-      };
+      return { text: 'Overdue', variant: 'error', icon: FiAlertCircle };
     } else {
-      return {
-        text: 'Pending',
-        className: 'bg-yellow-100 text-yellow-800',
-        icon: FiClock
-      };
+      return { text: 'Pending', variant: 'warning', icon: FiClock };
     }
   };
 
@@ -85,20 +70,9 @@ export default function MyAssignments() {
 
   const filteredAssignments = assignments.filter(assignment => {
     if (filter === 'all') return true;
-
     const status = getStatusBadge(assignment).text.toLowerCase();
     return status === filter;
   });
-
-  if (authLoading || loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   const filterOptions = [
     { value: 'all', label: 'All', count: assignments.length },
@@ -107,6 +81,16 @@ export default function MyAssignments() {
     { value: 'graded', label: 'Graded', count: assignments.filter(a => getStatusBadge(a).text === 'Graded').length },
     { value: 'overdue', label: 'Overdue', count: assignments.filter(a => getStatusBadge(a).text === 'Overdue').length },
   ];
+
+  if (authLoading || loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <>
@@ -118,7 +102,7 @@ export default function MyAssignments() {
         <div className="space-y-6">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white shadow-lg">
-            <div className="flex items-center justify-between">
+            <div className="flex-between">
               <div>
                 <h1 className="text-2xl font-bold mb-1">My Assignments</h1>
                 <p className="text-primary-100">Track and submit your assignments</p>
@@ -139,31 +123,33 @@ export default function MyAssignments() {
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <FiFilter className="w-5 h-5 text-gray-400" />
-              <div className="flex gap-2 flex-wrap">
-                {filterOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setFilter(option.value)}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filter === option.value
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                      }`}
-                  >
-                    {option.label}
-                    {option.count > 0 && (
-                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === option.value ? 'bg-white/20' : 'bg-gray-200'
-                        }`}>
-                        {option.count}
-                      </span>
-                    )}
-                  </button>
-                ))}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <FiFilter className="w-5 h-5 text-gray-400" />
+                <div className="flex gap-2 flex-wrap">
+                  {filterOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setFilter(option.value)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filter === option.value
+                          ? 'bg-primary-600 text-white shadow-md'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      {option.label}
+                      {option.count > 0 && (
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === option.value ? 'bg-white/20' : 'bg-gray-200'
+                          }`}>
+                          {option.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Assignments Grid */}
           {filteredAssignments.length > 0 ? (
@@ -173,27 +159,27 @@ export default function MyAssignments() {
                 const StatusIcon = statusBadge.icon;
 
                 return (
-                  <div
+                  <Card
                     key={assignment._id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer group overflow-hidden flex flex-col"
+                    className="card-hover cursor-pointer group overflow-hidden flex flex-col"
                     onClick={() => router.push(`/dashboard/assignments/${assignment._id}`)}
                   >
                     {/* Header with status */}
                     <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                      <div className="flex items-start justify-between mb-2">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusBadge.className}`}>
-                          <StatusIcon className="w-3.5 h-3.5" />
+                      <div className="flex-between mb-2">
+                        <Badge variant={statusBadge.variant}>
+                          <StatusIcon className="w-3.5 h-3.5 mr-1" />
                           {statusBadge.text}
-                        </span>
+                        </Badge>
                         <span className="text-xs text-gray-500 capitalize">{assignment.type}</span>
                       </div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 min-h-[3rem]">
+                      <h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors truncate-2 min-h-[3rem]">
                         {assignment.title}
                       </h3>
                     </div>
 
-                    {/* Content - flex-1 to take remaining space */}
-                    <div className="p-4 space-y-3 flex-1 flex flex-col">
+                    {/* Content */}
+                    <CardContent className="p-4 space-y-3 flex-1 flex flex-col">
                       {/* Internship & Module */}
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <FiFileText className="w-4 h-4 flex-shrink-0" />
@@ -201,14 +187,14 @@ export default function MyAssignments() {
                       </div>
 
                       {/* Due Date */}
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex-between text-sm">
                         <div className="flex items-center gap-2 text-gray-600">
                           <FiCalendar className="w-4 h-4" />
                           <span>{new Date(assignment.dueDate).toLocaleDateString()}</span>
                         </div>
                         <span className={`text-xs font-medium ${new Date(assignment.dueDate) < new Date()
-                          ? 'text-red-600'
-                          : 'text-gray-500'
+                            ? 'text-red-600'
+                            : 'text-gray-500'
                           }`}>
                           {getDaysUntilDue(assignment.dueDate)}
                         </span>
@@ -224,28 +210,30 @@ export default function MyAssignments() {
                         </div>
                       )}
 
-                      {/* Action - mt-auto pushes to bottom */}
+                      {/* Action */}
                       <div className="pt-2 border-t border-gray-100 mt-auto">
-                        <button className="w-full flex items-center justify-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
+                        <button className="w-full flex-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors">
                           View Details
                           <FiChevronRight className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-              <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
-              <p className="text-gray-500">
-                {filter === 'all'
-                  ? 'You have no assignments yet'
-                  : `No ${filter} assignments`}
-              </p>
-            </div>
+            <Card>
+              <CardContent className="py-12 text-center">
+                <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
+                <p className="text-gray-500">
+                  {filter === 'all'
+                    ? 'You have no assignments yet'
+                    : `No ${filter} assignments`}
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </DashboardLayout>

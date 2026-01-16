@@ -6,14 +6,22 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import apiClient from '@/utils/apiClient';
 import { useAuth } from '@/context/AuthContext';
-import { FiClock, FiUsers, FiCalendar, FiBookOpen, FiAlertCircle } from 'react-icons/fi';
-import Button from '@/components/ui/Button';
-import SectionHeader from '@/components/ui/SectionHeader';
-import Card, { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { FiClock, FiUsers, FiCalendar, FiBookOpen, FiSearch } from 'react-icons/fi';
+import {
+  SectionHeader,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Button,
+  LoadingSpinner,
+  FormInput,
+  FormSelect
+} from '@/components/ui';
+import { useApiCall } from '@/hooks/useCommon';
 
 export default function Internships() {
-  const [internships, setInternships] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
     category: '',
     level: '',
@@ -21,6 +29,21 @@ export default function Internships() {
   });
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+
+  const { data: internships, loading, execute: fetchInternships } = useApiCall(
+    () => {
+      const params = new URLSearchParams();
+      if (filter.category) params.append('category', filter.category);
+      if (filter.level) params.append('level', filter.level);
+      if (filter.search) params.append('search', filter.search);
+      return apiClient.get(`/internships?${params.toString()}`);
+    },
+    {
+      initialData: [],
+      errorMessage: 'Failed to fetch internships',
+      dependencies: [] // Manual trigger for search
+    }
+  );
 
   useEffect(() => {
     // Check if user is intern and redirect them
@@ -31,22 +54,6 @@ export default function Internships() {
     }
   }, [isAuthenticated, user, router]);
 
-  const fetchInternships = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filter.category) params.append('category', filter.category);
-      if (filter.level) params.append('level', filter.level);
-      if (filter.search) params.append('search', filter.search);
-
-      const response = await apiClient.get(`/internships?${params.toString()}`);
-      setInternships(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch internships:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFilterChange = (e) => {
     setFilter({ ...filter, [e.target.name]: e.target.value });
   };
@@ -55,6 +62,24 @@ export default function Internships() {
     e.preventDefault();
     fetchInternships();
   };
+
+  const categoryOptions = [
+    { value: '', label: 'All Categories' },
+    { value: 'Web Development', label: 'Web Development' },
+    { value: 'Mobile Development', label: 'Mobile Development' },
+    { value: 'Data Science', label: 'Data Science' },
+    { value: 'AI/ML', label: 'AI/ML' },
+    { value: 'DevOps', label: 'DevOps' },
+    { value: 'Cybersecurity', label: 'Cybersecurity' },
+    { value: 'UI/UX Design', label: 'UI/UX Design' },
+  ];
+
+  const levelOptions = [
+    { value: '', label: 'All Levels' },
+    { value: 'Beginner', label: 'Beginner' },
+    { value: 'Intermediate', label: 'Intermediate' },
+    { value: 'Advanced', label: 'Advanced' },
+  ];
 
   return (
     <>
@@ -75,50 +100,40 @@ export default function Internships() {
           />
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-200">
-            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <input
-                type="text"
-                name="search"
-                placeholder="Search internships..."
-                value={filter.search}
-                onChange={handleFilterChange}
-                className="input"
-              />
-              <select
-                name="category"
-                value={filter.category}
-                onChange={handleFilterChange}
-                className="input"
-              >
-                <option value="">All Categories</option>
-                <option value="Web Development">Web Development</option>
-                <option value="Mobile Development">Mobile Development</option>
-                <option value="Data Science">Data Science</option>
-                <option value="AI/ML">AI/ML</option>
-                <option value="DevOps">DevOps</option>
-                <option value="Cybersecurity">Cybersecurity</option>
-                <option value="UI/UX Design">UI/UX Design</option>
-              </select>
-              <select
-                name="level"
-                value={filter.level}
-                onChange={handleFilterChange}
-                className="input"
-              >
-                <option value="">All Levels</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-              <Button type="submit">Search</Button>
-            </form>
-          </div>
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <FormInput
+                  name="search"
+                  placeholder="Search internships..."
+                  value={filter.search}
+                  onChange={handleFilterChange}
+                  icon={FiSearch}
+                  className="mb-0"
+                />
+                <FormSelect
+                  name="category"
+                  value={filter.category}
+                  onChange={handleFilterChange}
+                  options={categoryOptions}
+                  className="mb-0"
+                />
+                <FormSelect
+                  name="level"
+                  value={filter.level}
+                  onChange={handleFilterChange}
+                  options={levelOptions}
+                  className="mb-0"
+                />
+                <Button type="submit" className="w-full">Search</Button>
+              </form>
+            </CardContent>
+          </Card>
 
           {/* Internships Grid */}
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <div className="flex-center h-64">
+              <LoadingSpinner size="lg" />
             </div>
           ) : internships.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -140,13 +155,13 @@ export default function Internships() {
                           </span>
                           <span className="text-xs text-gray-500">{internship.level}</span>
                         </div>
-                        <CardTitle>{internship.title}</CardTitle>
-                        <CardDescription>{internship.description}</CardDescription>
+                        <CardTitle className="text-xl mb-2">{internship.title}</CardTitle>
+                        <CardDescription className="line-clamp-2">{internship.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                           <div className="flex items-center">
-                            <FiClock className="w-4 h-4 mr-2" />
+                            <FiClock className="w-4 h-4 mr-2 text-primary-500" />
                             <span>
                               {typeof internship.duration === 'object'
                                 ? `${internship.duration.weeks || 0} weeks`
@@ -154,15 +169,15 @@ export default function Internships() {
                             </span>
                           </div>
                           <div className="flex items-center">
-                            <FiBookOpen className="w-4 h-4 mr-2" />
+                            <FiBookOpen className="w-4 h-4 mr-2 text-primary-500" />
                             <span>{internship.moduleCount || 0} modules</span>
                           </div>
                           <div className="flex items-center">
-                            <FiUsers className="w-4 h-4 mr-2" />
+                            <FiUsers className="w-4 h-4 mr-2 text-primary-500" />
                             <span>{internship.enrollmentCount || 0} enrolled</span>
                           </div>
                           <div className="flex items-center">
-                            <FiCalendar className="w-4 h-4 mr-2" />
+                            <FiCalendar className="w-4 h-4 mr-2 text-primary-500" />
                             <span>
                               {internship.startDate
                                 ? new Date(internship.startDate).toLocaleDateString()
@@ -171,9 +186,9 @@ export default function Internships() {
                           </div>
                         </div>
                         {internship.mentor && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="pt-4 border-t border-gray-100">
                             <p className="text-sm text-gray-600">
-                              Mentor: <span className="font-medium">{internship.mentor.name}</span>
+                              Mentor: <span className="font-medium text-gray-900">{internship.mentor.name}</span>
                             </p>
                           </div>
                         )}
@@ -184,10 +199,12 @@ export default function Internships() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-              <p className="text-gray-500 text-lg">No internships found</p>
-              <p className="text-gray-400 mt-2">Try adjusting your search filters</p>
-            </div>
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-gray-500 text-lg">No internships found</p>
+                <p className="text-gray-400 mt-2">Try adjusting your search filters</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </main>

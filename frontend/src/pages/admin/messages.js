@@ -101,12 +101,16 @@ export default function AdminMessages() {
             const fetchedMessages = response.data.data || [];
             setMessages(fetchedMessages);
             if (socket) socket.emit('join_conversation', conversationId);
-            
+
             // Mark unread messages as read
             const currentUserId = user?._id || user?.id;
             fetchedMessages.forEach(msg => {
                 const senderIds = msg.sender?._id || msg.sender?.id || msg.sender;
-                if (senderIds !== currentUserId && !msg.readBy?.some(r => r.user === currentUserId)) {
+                const isReadByUser = msg.readBy?.some(r => {
+                    const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                    return readByUserId === currentUserId;
+                });
+                if (senderIds !== currentUserId && !isReadByUser) {
                     markMessageAsRead(msg._id);
                 }
             });
@@ -116,24 +120,16 @@ export default function AdminMessages() {
     };
 
     useEffect(() => {
-        if (!socket) {
-            console.log('Socket not available yet');
-            return;
-        }
-
-        console.log('Setting up socket listeners...');
+        if (!socket) return;
 
         const handleNewMessage = (message) => {
-            console.log('Received new_message event:', message);
             const msgConvId = message.conversation || message.conversationId;
 
             setMessages((prev) => {
                 if (selectedConversation && msgConvId === selectedConversation._id) {
                     if (prev.some(m => m._id === message._id)) {
-                        console.log('Duplicate message, skipping');
                         return prev;
                     }
-                    console.log('Adding new message to state');
                     return [...prev, message];
                 }
                 return prev;
@@ -146,17 +142,19 @@ export default function AdminMessages() {
                     setTimeout(() => markMessageAsRead(message._id), 100);
                 }
             }
-            
+
             fetchConversations();
         };
 
         const handleMessageRead = (data) => {
-            console.log('Received message_read event:', data);
             setMessages(prev => {
                 if (selectedConversation && data.conversationId === selectedConversation._id) {
                     return prev.map(m => {
                         if (data.messageId && m._id !== data.messageId) return m;
-                        const alreadyRead = m.readBy?.some(r => r.user === data.userId);
+                        const alreadyRead = m.readBy?.some(r => {
+                            const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                            return readByUserId === data.userId;
+                        });
                         if (!alreadyRead) {
                             return {
                                 ...m,
@@ -173,10 +171,7 @@ export default function AdminMessages() {
         socket.on('new_message', handleNewMessage);
         socket.on('message_read', handleMessageRead);
 
-        console.log('Socket listeners registered');
-
         return () => {
-            console.log('Cleaning up socket listeners');
             socket.off('new_message', handleNewMessage);
             socket.off('message_read', handleMessageRead);
         };
@@ -240,8 +235,6 @@ export default function AdminMessages() {
                 }];
             });
 
-            console.log('Message sent - User ID:', user._id || user.id, 'Sender ID in message:', sentMessage.sender);
-
             fetchConversations();
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -293,7 +286,10 @@ export default function AdminMessages() {
         const messageSenderId = message.sender?._id || message.sender?.id || message.sender;
         if (messageSenderId !== currentUserId) return null;
         const otherParticipants = selectedConversation?.participants.filter(p => (p._id || p.id) !== currentUserId);
-        const isRead = otherParticipants?.every(p => message.readBy?.some(r => (r.user === p._id || r.user === p.id)));
+        const isRead = otherParticipants?.every(p => message.readBy?.some(r => {
+            const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+            return readByUserId === p._id || readByUserId === p.id;
+        }));
         return isRead ? (
             <div className="flex items-center gap-0.5">
                 <FiCheck className="w-3.5 h-3.5 text-blue-500" strokeWidth={3} />
@@ -407,6 +403,15 @@ export default function AdminMessages() {
                                     <div className="divide-y divide-gray-100">
                                         {filteredConversations.map(conv => {
                                             const other = conv.participants?.find(p => p._id !== user?._id);
+                                            const currentUserId = user?._id || user?.id;
+                                            const lastMsg = conv.lastMessage;
+                                            const lastMsgSenderId = lastMsg?.sender?._id || lastMsg?.sender?.id || lastMsg?.sender;
+                                            const isLastMsgFromOther = lastMsgSenderId !== currentUserId;
+                                            const isUnread = isLastMsgFromOther && lastMsg && !lastMsg.readBy?.some(r => {
+                                                const readByUserId = typeof r.user === 'object' ? (r.user?._id || r.user?.id) : r.user;
+                                                return readByUserId === currentUserId;
+                                            });
+                                            
                                             return (
                                                 <button
                                                     key={conv._id}
@@ -416,12 +421,25 @@ export default function AdminMessages() {
                                                     <Avatar name={`${other?.firstName} ${other?.lastName}`} size="md" />
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex justify-between items-baseline">
-                                                            <span className="font-semibold text-gray-900 truncate">{other?.firstName} {other?.lastName}</span>
-                                                            {conv.lastMessageAt && <span className="text-xs text-gray-500">{formatTime(conv.lastMessageAt)}</span>}
+                                                            <span className={`truncate ${isUnread ? 'font-bold text-gray-900' : 'font-semibold text-gray-900'}`}>
+                                                                {other?.firstName} {other?.lastName}
+                                                            </span>
+                                                            {conv.lastMessageAt && (
+                                                                <span className={`text-xs flex-shrink-0 ${isUnread ? 'text-primary-600 font-semibold' : 'text-gray-500'}`}>
+                                                                    {formatTime(conv.lastMessageAt)}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] rounded uppercase font-bold tracking-wide">{other?.role}</span>
-                                                            <p className="text-sm text-gray-500 truncate flex-1">{conv.lastMessage?.content || 'New conversation'}</p>
+                                                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] rounded uppercase font-bold tracking-wide">
+                                                                {other?.role}
+                                                            </span>
+                                                            <p className={`text-sm truncate flex-1 ${isUnread ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                                                                {conv.lastMessage?.content || 'New conversation'}
+                                                            </p>
+                                                            {isUnread && (
+                                                                <span className="flex-shrink-0 w-2 h-2 bg-primary-600 rounded-full"></span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </button>

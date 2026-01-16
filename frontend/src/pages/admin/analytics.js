@@ -2,10 +2,20 @@ import Head from 'next/head';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import apiClient from '@/utils/apiClient';
-import SectionHeader from '@/components/ui/SectionHeader';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
-import { FiUsers, FiBookOpen, FiFileText, FiAward, FiTrendingUp, FiClock } from 'react-icons/fi';
+import {
+  SectionHeader,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Button,
+  LoadingSpinner,
+  Alert,
+  ResponsiveTable,
+  Badge
+} from '@/components/ui';
+import { FiUsers, FiBookOpen, FiFileText, FiTrendingUp } from 'react-icons/fi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,7 +28,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
+import { useApiCall } from '@/hooks/useCommon';
 
 // Register Chart.js components
 ChartJS.register(
@@ -34,23 +45,16 @@ ChartJS.register(
 );
 
 export default function AdminAnalytics() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.get('/analytics/dashboard/admin');
-      setData(res.data.data || res.data);
-    } catch (e) {
-      console.error('Analytics fetch failed', e);
-      setError('Failed to load analytics');
-    } finally {
-      setLoading(false);
+  const { data: rawData, loading, error, execute: load } = useApiCall(
+    () => apiClient.get('/analytics/dashboard/admin'),
+    {
+      errorMessage: 'Failed to load analytics',
+      initialData: null
     }
-  };
+  );
+
+  // Extract the actual data from nested structure
+  const data = rawData?.data || rawData;
 
   useEffect(() => {
     load();
@@ -147,26 +151,84 @@ export default function AdminAnalytics() {
     },
   };
 
+  const recentEnrollmentsColumns = [
+    {
+      header: 'Student',
+      accessor: 'user',
+      render: (enrollment) => `${enrollment.user?.firstName} ${enrollment.user?.lastName}`
+    },
+    {
+      header: 'Internship',
+      accessor: 'internship',
+      render: (enrollment) => enrollment.internship?.title
+    },
+    {
+      header: 'Date',
+      accessor: 'createdAt',
+      render: (enrollment) => new Date(enrollment.createdAt).toLocaleDateString()
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (enrollment) => (
+        <Badge variant={
+          enrollment.status === 'active' ? 'success' :
+            enrollment.status === 'completed' ? 'info' : 'default'
+        }>
+          {enrollment.status}
+        </Badge>
+      )
+    }
+  ];
+
+  const recentSubmissionsColumns = [
+    {
+      header: 'Student',
+      accessor: 'user',
+      render: (submission) => `${submission.user?.firstName} ${submission.user?.lastName}`
+    },
+    {
+      header: 'Assignment',
+      accessor: 'assignment',
+      render: (submission) => submission.assignment?.title
+    },
+    {
+      header: 'Submitted',
+      accessor: 'submittedAt',
+      render: (submission) => new Date(submission.submittedAt).toLocaleDateString()
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (submission) => (
+        <Badge variant={
+          submission.status === 'submitted' ? 'warning' :
+            submission.status === 'graded' ? 'success' : 'default'
+        }>
+          {submission.status}
+        </Badge>
+      )
+    }
+  ];
+
   return (
     <>
       <Head><title>Admin Analytics</title></Head>
       <AdminLayout>
-        <SectionHeader title="Analytics" subtitle="Platform performance overview" />
-        <div className="flex justify-end mt-2 mb-4 gap-2">
+        <div className="flex-between mb-6">
+          <SectionHeader title="Analytics" subtitle="Platform performance overview" />
           <Button variant="outline" onClick={load} disabled={loading}>
             {loading ? 'Loading...' : 'Refresh'}
           </Button>
         </div>
 
         {error && (
-          <div className="p-4 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-            {error}
-          </div>
+          <Alert variant="error" title="Error" message={error} className="mb-4" />
         )}
 
         {loading && !data ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+          <div className="flex-center py-12">
+            <LoadingSpinner size="lg" />
           </div>
         ) : (
           <>
@@ -357,43 +419,12 @@ export default function AdminAnalytics() {
                   <CardTitle>Recent Enrollments</CardTitle>
                   <CardDescription>Latest 10 enrollments</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   {data?.recentEnrollments && data.recentEnrollments.length > 0 ? (
-                    <div className="overflow-x-auto -mx-5 px-5">
-                      <table className="w-full min-w-[600px]">
-                        <thead>
-                          <tr className="border-b border-neutral-200">
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Student</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Internship</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Date</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.recentEnrollments.map((enrollment) => (
-                            <tr key={enrollment._id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                              <td className="py-3 px-4 text-sm text-neutral-900">
-                                {enrollment.user?.firstName} {enrollment.user?.lastName}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-neutral-700">
-                                {enrollment.internship?.title}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-neutral-500">
-                                {new Date(enrollment.createdAt).toLocaleDateString()}
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
-                                  enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-neutral-100 text-neutral-800'
-                                  }`}>
-                                  {enrollment.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <ResponsiveTable
+                      columns={recentEnrollmentsColumns}
+                      data={data.recentEnrollments}
+                    />
                   ) : (
                     <p className="text-sm text-neutral-500 text-center py-4">No recent enrollments</p>
                   )}
@@ -408,43 +439,12 @@ export default function AdminAnalytics() {
                   <CardTitle>Recent Submissions</CardTitle>
                   <CardDescription>Latest 10 submissions requiring review</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   {data?.recentSubmissions && data.recentSubmissions.length > 0 ? (
-                    <div className="overflow-x-auto -mx-5 px-5">
-                      <table className="w-full min-w-[600px]">
-                        <thead>
-                          <tr className="border-b border-neutral-200">
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Student</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Assignment</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Submitted</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.recentSubmissions.map((submission) => (
-                            <tr key={submission._id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                              <td className="py-3 px-4 text-sm text-neutral-900">
-                                {submission.user?.firstName} {submission.user?.lastName}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-neutral-700">
-                                {submission.assignment?.title}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-neutral-500">
-                                {new Date(submission.submittedAt).toLocaleDateString()}
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${submission.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
-                                  submission.status === 'graded' ? 'bg-green-100 text-green-800' :
-                                    'bg-neutral-100 text-neutral-800'
-                                  }`}>
-                                  {submission.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <ResponsiveTable
+                      columns={recentSubmissionsColumns}
+                      data={data.recentSubmissions}
+                    />
                   ) : (
                     <p className="text-sm text-neutral-500 text-center py-4">No recent submissions</p>
                   )}

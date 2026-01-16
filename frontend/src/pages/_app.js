@@ -23,7 +23,9 @@ function MaintenanceChecker({ children }) {
         const res = await apiClient.get('/system/maintenance-status');
         setMaintenanceMode(res.data.data.maintenanceMode);
       } catch (error) {
-        console.error('Failed to check maintenance mode:', error);
+        // Log error but don't crash - backend might be offline
+        console.warn('Maintenance check failed (backend may be offline):', error.message);
+        setMaintenanceMode(false); // Assume app is running if we can't check
       } finally {
         setCheckingMaintenance(false);
       }

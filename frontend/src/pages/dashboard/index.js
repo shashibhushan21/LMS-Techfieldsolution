@@ -8,12 +8,24 @@ import ProgressCard from '@/components/dashboard/ProgressCard';
 import AssignmentCard from '@/components/dashboard/AssignmentCard';
 import apiClient from '@/utils/apiClient';
 import { FiBookOpen, FiFileText, FiAward, FiTrendingUp, FiCalendar, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { useApiCall } from '@/hooks/useCommon';
+import WelcomeBanner from '@/components/dashboard/WelcomeBanner';
 
 export default function InternDashboard() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    data: dashboardData,
+    loading,
+    execute: fetchDashboardData
+  } = useApiCall(
+    () => apiClient.get('/analytics/dashboard/intern').then(res => ({ data: res.data.data })),
+    {
+      initialData: null,
+      errorMessage: 'Failed to fetch dashboard data'
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -28,23 +40,6 @@ export default function InternDashboard() {
       }
     }
   }, [user, authLoading]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const response = await apiClient.get('/analytics/dashboard/intern');
-      setDashboardData(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        console.error('Error status:', error.response.status);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
 
   if (authLoading || loading) {
     return (
@@ -77,16 +72,11 @@ export default function InternDashboard() {
       <DashboardLayout>
         <div className="space-y-6 animate-fade-in">
           {/* Welcome Section */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 rounded-2xl p-8 text-white shadow-xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
-            <div className="relative z-10">
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">Welcome back, {userName}! 👋</h1>
-              <p className="text-primary-100 text-lg">Track your progress and continue your learning journey</p>
-            </div>
-          </div>
-
-
+          <WelcomeBanner
+            title={`Welcome back, ${userName}! 👋`}
+            subtitle="Track your progress and continue your learning journey"
+            variant="decorative"
+          />
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

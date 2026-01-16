@@ -1,17 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import ProgressCard from '@/components/dashboard/ProgressCard';
 import apiClient from '@/utils/apiClient';
-import { FiCalendar, FiClock, FiAward } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiAward, FiBookOpen } from 'react-icons/fi';
+import {
+  SectionHeader,
+  Card,
+  CardContent,
+  Button,
+  LoadingSpinner,
+  Badge,
+  ProgressBar
+} from '@/components/ui';
+import { useApiCall } from '@/hooks/useCommon';
 
 export default function MyInternships() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: enrollments, loading, execute: fetchEnrollments } = useApiCall(
+    () => apiClient.get('/enrollments/my-enrollments').then(res => ({ data: res.data.data || [] })),
+    {
+      initialData: [],
+      errorMessage: 'Failed to fetch enrollments'
+    }
+  );
 
   useEffect(() => {
     if (!authLoading) {
@@ -23,23 +38,11 @@ export default function MyInternships() {
     }
   }, [user, authLoading]);
 
-  const fetchEnrollments = async () => {
-    try {
-      const response = await apiClient.get('/enrollments/my-enrollments');
-      setEnrollments(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch enrollments:', error);
-      setEnrollments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (authLoading || loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex-center h-64">
+          <LoadingSpinner size="lg" />
         </div>
       </DashboardLayout>
     );
@@ -52,90 +55,99 @@ export default function MyInternships() {
       </Head>
 
       <DashboardLayout>
-        <div className="space-y-4">
-          <div className="bg-white border border-neutral-200 rounded-lg p-4 shadow-sm">
-            <h1 className="text-xl font-bold text-gray-900">My Internships</h1>
-            <p className="text-sm text-gray-600 mt-0.5">Track your enrolled internships and progress</p>
-          </div>
+        <div className="space-y-6">
+          <SectionHeader
+            title="My Internships"
+            subtitle="Track your enrolled internships and progress"
+          />
 
           {enrollments.length > 0 ? (
             <div className="space-y-4">
               {enrollments.map((enrollment) => (
-                <div key={enrollment._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-gray-900 mb-1">
-                        {enrollment.internship?.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {enrollment.internship?.description}
-                      </p>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <FiCalendar className="w-3.5 h-3.5" />
-                          <span>Enrolled: {enrollment.createdAt ? new Date(enrollment.createdAt).toLocaleDateString() : 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <FiClock className="w-3.5 h-3.5" />
-                          <span>
-                            Duration: {enrollment.internship?.duration
-                              ? typeof enrollment.internship.duration === 'object'
-                                ? `${enrollment.internship.duration.weeks || 0} weeks`
-                                : enrollment.internship.duration
-                              : 'N/A'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <FiAward className="w-3.5 h-3.5" />
-                          <span>Level: {enrollment.internship?.level || 'N/A'}</span>
-                        </div>
-                        <div>
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${enrollment.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : enrollment.status === 'active'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                            }`}>
+                <Card key={enrollment._id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {enrollment.internship?.title}
+                          </h3>
+                          <Badge variant={
+                            enrollment.status === 'completed' ? 'success' :
+                              enrollment.status === 'active' ? 'info' : 'warning'
+                          }>
                             {enrollment.status}
-                          </span>
+                          </Badge>
                         </div>
+
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          {enrollment.internship?.description}
+                        </p>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FiCalendar className="w-4 h-4 text-primary-500" />
+                            <span>Enrolled: {enrollment.createdAt ? new Date(enrollment.createdAt).toLocaleDateString() : 'N/A'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FiClock className="w-4 h-4 text-primary-500" />
+                            <span>
+                              Duration: {enrollment.internship?.duration
+                                ? typeof enrollment.internship.duration === 'object'
+                                  ? `${enrollment.internship.duration.weeks || 0} weeks`
+                                  : enrollment.internship.duration
+                                : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FiAward className="w-4 h-4 text-primary-500" />
+                            <span>Level: {enrollment.internship?.skillLevel || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        {enrollment.progressPercentage !== undefined && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="font-medium text-gray-700">Overall Progress</span>
+                              <span className="font-medium text-primary-600">{enrollment.progressPercentage}%</span>
+                            </div>
+                            <ProgressBar value={enrollment.progressPercentage} />
+                          </div>
+                        )}
                       </div>
 
-                      {enrollment.progressPercentage !== undefined && (
-                        <ProgressCard
-                          title="Overall Progress"
-                          current={enrollment.progressPercentage}
-                          total={100}
-                          percentage={enrollment.progressPercentage}
-                          color="primary"
-                        />
-                      )}
+                      <div className="flex flex-row md:flex-col gap-3 min-w-[140px]">
+                        <Button
+                          variant="primary"
+                          className="w-full justify-center"
+                          onClick={() => router.push(`/internships/${enrollment.internship?._id}`)}
+                        >
+                          View Details
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-center"
+                          onClick={() => router.push(`/dashboard/assignments?internship=${enrollment.internship?._id}`)}
+                        >
+                          Assignments
+                        </Button>
+                      </div>
                     </div>
-
-                    <div className="flex md:flex-col gap-2">
-                      <button
-                        onClick={() => router.push(`/internships/${enrollment.internship?._id}`)}
-                        className="btn btn-sm btn-primary"
-                      >
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => router.push(`/dashboard/assignments?internship=${enrollment.internship?._id}`)}
-                        className="btn btn-sm btn-secondary"
-                      >
-                        Assignments
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <p className="text-gray-500 mb-2">No internship enrolled yet</p>
-              <p className="text-sm text-gray-400">Contact your administrator to enroll in an internship.</p>
-            </div>
+            <Card>
+              <CardContent className="text-center py-12">
+                <FiBookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-lg font-medium text-gray-900">No internship enrolled yet</h3>
+                <p className="mt-1 text-sm text-gray-500 mb-6">Contact your administrator to enroll in an internship.</p>
+                <Button onClick={() => router.push('/internships')}>
+                  Browse Internships
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
       </DashboardLayout>

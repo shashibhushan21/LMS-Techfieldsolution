@@ -20,12 +20,12 @@ class SocketService {
    */
   connect(userId) {
     if (this.socket?.connected) {
-      console.log('[Socket] Already connected');
+
       return this.socket;
     }
 
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
-    
+
     this.socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -37,7 +37,7 @@ class SocketService {
     });
 
     this._setupDefaultListeners(userId);
-    
+
     return this.socket;
   }
 
@@ -48,21 +48,21 @@ class SocketService {
    */
   _setupDefaultListeners(userId) {
     this.socket.on('connect', () => {
-      console.log('[Socket] Connected:', this.socket.id);
+
       this.isConnected = true;
       this.reconnectAttempts = 0;
-      
+
       // Emit join event with userId
       if (userId) {
         this.socket.emit('join', userId);
-        console.log('[Socket] User joined room:', userId);
+
       }
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
+
       this.isConnected = false;
-      
+
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, reconnect manually
         this.socket.connect();
@@ -72,19 +72,19 @@ class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error('[Socket] Connection error:', error.message);
       this.reconnectAttempts++;
-      
+
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         console.error('[Socket] Max reconnection attempts reached');
       }
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log('[Socket] Reconnected after', attemptNumber, 'attempts');
+
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('[Socket] Reconnection attempt:', attemptNumber);
+
     });
 
     this.socket.on('reconnect_error', (error) => {
@@ -105,9 +105,9 @@ class SocketService {
       console.error('[Socket] Socket not initialized');
       return;
     }
-    
+
     this.socket.emit('join_conversation', conversationId);
-    console.log('[Socket] Joined conversation:', conversationId);
+
   }
 
   /**
@@ -119,9 +119,9 @@ class SocketService {
       console.error('[Socket] Socket not initialized');
       return;
     }
-    
+
     this.socket.emit('leave_conversation', conversationId);
-    console.log('[Socket] Left conversation:', conversationId);
+
   }
 
   /**
@@ -133,9 +133,9 @@ class SocketService {
       console.error('[Socket] Socket not initialized');
       return;
     }
-    
+
     this.socket.emit('send_message', messageData);
-    console.log('[Socket] Message sent:', messageData);
+
   }
 
   /**
@@ -147,9 +147,9 @@ class SocketService {
       console.error('[Socket] Socket not initialized');
       return;
     }
-    
+
     this.socket.emit('mark_read', readData);
-    console.log('[Socket] Marked as read:', readData);
+
   }
 
   /**
@@ -168,9 +168,9 @@ class SocketService {
       this.eventHandlers.set(event, []);
     }
     this.eventHandlers.get(event).push(handler);
-    
+
     this.socket.on(event, handler);
-    console.log(`[Socket] Registered handler for event: ${event}`);
+
   }
 
   /**
@@ -186,7 +186,7 @@ class SocketService {
 
     if (handler) {
       this.socket.off(event, handler);
-      
+
       // Remove from stored handlers
       const handlers = this.eventHandlers.get(event);
       if (handlers) {
@@ -200,8 +200,8 @@ class SocketService {
       this.socket.off(event);
       this.eventHandlers.delete(event);
     }
-    
-    console.log(`[Socket] Removed handler for event: ${event}`);
+
+
   }
 
   /**
@@ -214,9 +214,9 @@ class SocketService {
       console.error('[Socket] Socket not initialized');
       return;
     }
-    
+
     this.socket.emit(event, data);
-    console.log(`[Socket] Emitted event: ${event}`, data);
+
   }
 
   /**
@@ -231,11 +231,11 @@ class SocketService {
         });
       });
       this.eventHandlers.clear();
-      
+
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
-      console.log('[Socket] Disconnected and cleaned up');
+
     }
   }
 

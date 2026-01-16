@@ -251,7 +251,7 @@ exports.getMyEnrollments = async (req, res, next) => {
     const Submission = require('../models/Submission');
 
     const enrollments = await Enrollment.find({ user: req.user.id })
-      .populate('internship', 'title domain company duration description thumbnail')
+      .populate('internship', 'title domain company duration description thumbnail skillLevel')
       .sort({ createdAt: -1 });
 
     const enrollmentsWithProgress = await Promise.all(

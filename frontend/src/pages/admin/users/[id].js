@@ -5,24 +5,74 @@ import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layout/AdminLayout';
 import Avatar from '@/components/ui/Avatar';
 import apiClient from '@/utils/apiClient';
-import { 
-  FiUser, FiMail, FiCalendar, FiBook, FiFileText, 
+import {
+  FiUser, FiMail, FiCalendar, FiBook, FiFileText,
   FiCheckCircle, FiClock, FiAward, FiMessageSquare,
   FiTrendingUp, FiActivity, FiEdit2, FiShield
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useApiCall } from '@/hooks/useCommon';
+import { LoadingSpinner } from '@/components/ui';
 
 export default function UserDetail() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { id } = router.query;
-  
-  const [userData, setUserData] = useState(null);
-  const [enrollments, setEnrollments] = useState([]);
-  const [submissions, setSubmissions] = useState([]);
+
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+
+  const {
+    data: allUserData,
+    loading,
+    execute: fetchUserData
+  } = useApiCall(
+    async () => {
+      // Fetch user profile
+      const userResponse = await apiClient.get(`/users/${id}`);
+      const userData = userResponse.data.data;
+
+      let enrollmentsData = [];
+      let submissionsData = [];
+
+      // Fetch user enrollments
+      try {
+        const enrollmentResponse = await apiClient.get(`/enrollments/user/${id}`);
+        enrollmentsData = enrollmentResponse.data.data || [];
+      } catch (err) {
+        enrollmentsData = [];
+      }
+
+      // Fetch user submissions
+      try {
+        const submissionsResponse = await apiClient.get(`/submissions?user=${id}`);
+        submissionsData = submissionsResponse.data.data || [];
+      } catch (err) {
+        submissionsData = [];
+      }
+
+      return {
+        data: {
+          userData,
+          enrollments: enrollmentsData,
+          submissions: submissionsData
+        }
+      };
+    },
+    {
+      initialData: null,
+      errorMessage: 'Failed to load user data',
+      onError: (error) => {
+        if (error.response?.status === 404) {
+          router.push('/admin/users');
+        }
+      }
+    }
+  );
+
+  const userData = allUserData?.userData;
+  const enrollments = allUserData?.enrollments || [];
+  const submissions = allUserData?.submissions || [];
 
   useEffect(() => {
     if (!authLoading) {
@@ -36,58 +86,20 @@ export default function UserDetail() {
     }
   }, [user, authLoading, id]);
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch user profile
-      const userResponse = await apiClient.get(`/users/${id}`);
-      setUserData(userResponse.data.data); // Backend returns user directly in data, not data.user
-
-      let enrollmentsData = [];
-      let submissionsData = [];
-
-      // Fetch user enrollments
-      try {
-        const enrollmentResponse = await apiClient.get(`/enrollments/user/${id}`);
-        enrollmentsData = enrollmentResponse.data.data || [];
-        setEnrollments(enrollmentsData);
-      } catch (err) {
-        console.log('No enrollments found');
-        setEnrollments([]);
-      }
-
-      // Fetch user submissions
-      try {
-        const submissionsResponse = await apiClient.get(`/submissions?user=${id}`);
-        submissionsData = submissionsResponse.data.data || [];
-        setSubmissions(submissionsData);
-      } catch (err) {
-        console.log('No submissions found');
-        setSubmissions([]);
-      }
-
-      // Calculate stats
-      calculateStats(enrollmentsData, submissionsData);
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-      toast.error('Failed to load user data');
-      if (error.response?.status === 404) {
-        router.push('/admin/users');
-      }
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (enrollments.length > 0 || submissions.length > 0) {
+      calculateStats(enrollments, submissions);
     }
-  };
+  }, [enrollments, submissions]);
 
   const calculateStats = (enrollments, submissions) => {
     const totalEnrollments = enrollments.length;
     const activeEnrollments = enrollments.filter(e => e.status === 'active').length;
     const completedEnrollments = enrollments.filter(e => e.status === 'completed').length;
-    
+
     const totalSubmissions = submissions.length;
     const gradedSubmissions = submissions.filter(s => s.status === 'graded' && s.score !== null).length;
-    
+
     // Calculate average score properly - submissions have 'score' field and assignment has 'maxScore'
     let averageScore = 0;
     if (gradedSubmissions > 0) {
@@ -133,8 +145,8 @@ export default function UserDetail() {
   if (authLoading || loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" />
         </div>
       </AdminLayout>
     );
@@ -169,7 +181,7 @@ export default function UserDetail() {
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <Avatar 
+                <Avatar
                   name={`${userData.firstName} ${userData.lastName}`}
                   src={userData.avatar}
                   size="2xl"
@@ -287,11 +299,10 @@ export default function UserDetail() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${
-                        activeTab === tab.id
-                          ? 'text-primary-600 border-b-2 border-primary-600'
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
+                      className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       {tab.label}
@@ -334,9 +345,8 @@ export default function UserDetail() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Account Status</p>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            userData.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${userData.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
                             {userData.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </div>
@@ -366,12 +376,12 @@ export default function UserDetail() {
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-primary-600 h-2 rounded-full"
-                                style={{ 
-                                  width: `${stats.totalEnrollments > 0 
-                                    ? (stats.activeEnrollments / stats.totalEnrollments) * 100 
-                                    : 0}%` 
+                                style={{
+                                  width: `${stats.totalEnrollments > 0
+                                    ? (stats.activeEnrollments / stats.totalEnrollments) * 100
+                                    : 0}%`
                                 }}
                               />
                             </div>
@@ -385,12 +395,12 @@ export default function UserDetail() {
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-green-600 h-2 rounded-full"
-                                style={{ 
-                                  width: `${stats.totalSubmissions > 0 
-                                    ? (stats.gradedSubmissions / stats.totalSubmissions) * 100 
-                                    : 0}%` 
+                                style={{
+                                  width: `${stats.totalSubmissions > 0
+                                    ? (stats.gradedSubmissions / stats.totalSubmissions) * 100
+                                    : 0}%`
                                 }}
                               />
                             </div>
@@ -402,7 +412,7 @@ export default function UserDetail() {
                               <span className="font-medium text-gray-900">{stats.averageScore}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-blue-600 h-2 rounded-full"
                                 style={{ width: `${stats.averageScore || 0}%` }}
                               />
@@ -455,7 +465,7 @@ export default function UserDetail() {
                   {enrollments.length > 0 ? (
                     <div className="grid gap-4">
                       {enrollments.map((enrollment) => (
-                        <div 
+                        <div
                           key={enrollment._id}
                           className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
                         >
@@ -471,11 +481,10 @@ export default function UserDetail() {
                                 <span className="text-gray-500">
                                   Enrolled: {new Date(enrollment.createdAt).toLocaleDateString()}
                                 </span>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${enrollment.status === 'active' ? 'bg-green-100 text-green-800' :
                                   enrollment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
                                   {enrollment.status}
                                 </span>
                               </div>
@@ -484,7 +493,7 @@ export default function UserDetail() {
                               <div className="text-sm text-gray-600 mb-1">Progress</div>
                               <div className="flex items-center gap-2">
                                 <div className="w-24 bg-gray-200 rounded-full h-2">
-                                  <div 
+                                  <div
                                     className="bg-primary-600 h-2 rounded-full"
                                     style={{ width: `${enrollment.progressPercentage || 0}%` }}
                                   />
