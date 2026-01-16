@@ -22,6 +22,10 @@ connectDB().then(() => {
 
 const app = express();
 
+// Trust proxy is required when running behind a proxy (like Render, Heroku, Nginx)
+// to correctly identify the client's IP address.
+app.set('trust proxy', 1);
+
 // CORS - Must be first
 app.use(cors({
   origin: [
