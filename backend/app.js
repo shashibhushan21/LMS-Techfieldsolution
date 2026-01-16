@@ -24,7 +24,13 @@ const app = express();
 
 // CORS - Must be first
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3001'],
+  origin: [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://lms-techfieldsolution.vercel.app',
+    'https://lms.techfieldsolution.com'
+  ].filter(Boolean),
   credentials: true
 }));
 
